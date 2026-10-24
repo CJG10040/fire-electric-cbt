@@ -1,0 +1,39 @@
+# Secrets and private account/config files
+.env
+.env.*
+!.env.example
+.pi/
+.user-files/
+*.pem
+*.key
+*credential*
+*token*.txt
+
+# Private or temporary study saves — only the deliberately EMPTY public template is committed
+/cbt_data.json
+/orig_cbt_data.json
+/extracted/
+*backup*.json
+*private*.json
+*myNotes*.json
+
+# Generated analysis/build data and development dependencies
+__pycache__/
+*.py[cod]
+*.pkl
+.venv/
+node_modules/
+_jsdom/
+sa_items.json
+sa_bank.json
+sa_clusters_auto.json
+_pdf/
+preview/
+_inspect/
+_verify_pkg/
+*.log
+*.zip
+*.zip.part*
+*.z01
+*.xlsx
+.DS_Store
