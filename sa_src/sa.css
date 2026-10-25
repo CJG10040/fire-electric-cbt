@@ -158,6 +158,19 @@ ul.sa-l ul.sa-l{list-style:circle}
 .sa-cmp-row .n{font-size:.76rem;color:#6b7a86;line-height:1.4}
 .sa-cmp-row .go button{border:1px solid var(--border);background:#fff;border-radius:6px;cursor:pointer;font-size:.9rem;padding:3px 6px}
 .sa-cmp.hide .sa-cmp-row .v:not(.show){filter:blur(7px);user-select:none}
+.sa-law-table{margin:12px 0;padding:10px;border:1px solid #b9cadb;border-radius:8px;background:#fff}
+.sa-law-table>summary{cursor:pointer;font-weight:700;color:#174b76}
+.sa-law-table-version,.sa-law-table-source{font-size:.78rem;line-height:1.6;color:#526477;margin:8px 0}
+.sa-law-table-hint{background:#fff7d7;padding:9px;font-size:.85rem;line-height:1.6}
+.sa-law-table-image{display:block;padding:0;margin:10px 0;border:0;background:white;cursor:zoom-in;max-width:100%}
+.sa-law-table-image img{display:block;width:448px;max-width:100%;height:auto}
+#sa-law-table-viewer{width:min(96vw,1200px);max-width:96vw;max-height:94vh;margin:auto;border:1px solid #aab9c8;border-radius:10px;padding:12px;background:white;color:#23374b;z-index:1200}
+#sa-law-table-viewer::backdrop{background:rgba(0,0,0,.7)}
+#sa-law-table-viewer header{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-bottom:8px}
+#sa-law-table-viewer button{cursor:pointer;padding:7px 12px;border:1px solid #aab9c8;border-radius:6px;background:#f1f5fa;color:#23374b}
+.sa-law-table-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0 10px;font-size:.82rem}
+.sa-law-table-canvas{overflow:auto;max-height:72vh;border:1px solid #dde4ec;background:#f5f7fa}
+.sa-law-table-canvas img{display:block;height:auto;max-width:none;background:white}
 .sa-flash-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:.84rem;font-weight:700}
 .sa-flash-btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .sa-flash-btns .btn{flex:1;min-width:130px}

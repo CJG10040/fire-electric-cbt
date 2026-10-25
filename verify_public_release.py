@@ -30,7 +30,7 @@ for k in ('wrong', 'solved', 'history'):
     assert not progress['sa'][k], 'public SA template contains records: ' + k
 
 html = Path('cbt_v2/cbt.html').read_bytes()
-assert hashlib.sha256(html).hexdigest() == '184bfd3cbb831b1094148ea5ebe75f4508358162305964c1f37414a869ac6637', 'unexpected application version'
+assert hashlib.sha256(html).hexdigest() == 'cd93f91699b025ea42fb638a5a0b32aec98751b9d2b587223ae0327f22f4d1e7', 'unexpected application version'
 text = html.decode()
 bank = json.loads(re.search(r'const DB\s*=\s*(\[\s*\{.*?\}\s*\]);', text, re.S).group(1))
 assert len(bank) == 493
@@ -53,11 +53,14 @@ for name in paths:
 law = json.loads(re.search(r'/\*SA_LAW_START\*/(.*?)/\*SA_LAW_END\*/', text, re.S).group(1))
 updated_keys={k for n in law['notes'] if n['status'] in {'amendment','correction','supplement'} for k in n['ks']}
 assert law['asOf']=='2026-10-25' and len(updated_keys)==54 and law['counts']['pending']==14
+assert len(law['tables'])==1 and len(law['tables']['height']['links'])==3
+assert law['tables']['height']['src'].startswith('data:image/gif;base64,')
 manifest = {'release_date': '2026-10-25', 'application_sha256': hashlib.sha256(html).hexdigest(),
             'questions': 493, 'explanations': 379, 'images': 986, 'sa_occurrences': 447,
             'sa_clusters': 307, 'mnemonic_cards': 145, 'comparison_sets': 14,
             'current_law': {'as_of': law['asOf'], 'updated_clusters': len(updated_keys), 'notes': len(law['notes']),
                             'sources': len(law['sources']), 'pending': law['counts']['pending'], 'status_counts': law['counts']},
+            'law_tables': {'embedded_images': len(law['tables']), 'linked_clusters': 3, 'offline': True},
             'pdf_pages': {'mnemonic': 22, 'practice': 8},
             'private_progress_included': False, 'files': records}
 mp = Path('release-manifest.json')

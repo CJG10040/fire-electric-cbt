@@ -9,6 +9,7 @@ from datetime import date
 import hashlib
 import json
 import re
+import sa_law_tables
 
 AS_OF = '2026-10-25'
 SOURCES = {}
@@ -525,7 +526,12 @@ def payload(items, clusters):
         else:
             review[k] = dict(status='pending', notes=[], reason='현행 수치표·제품별 시험절차·KS/KEC 또는 복합 문항의 일부 조건은 추가 대조가 필요합니다. 현행 정답 확인 완료로 표시하지 않습니다.')
     raw = json.dumps([(o['id'],o['qh'],o['ah']) for o in items], ensure_ascii=False,separators=(',',':'))
-    result = dict(version=1, asOf=AS_OF, sources=SOURCES, notes=NOTES, review=review,
+    tables = sa_law_tables.payload()
+    for tid, table in tables.items():
+        assert re.fullmatch(r'[a-z_]+', tid) and table['source'] in SOURCES
+        assert set(table['links']) <= known
+        assert table['imageUrl'].startswith('https://www.law.go.kr/')
+    result = dict(version=2, asOf=AS_OF, sources=SOURCES, notes=NOTES, review=review, tables=tables,
                   counts=dict(Counter(r['status'] for r in review.values())), sourceAnswerSHA256=hashlib.sha256(raw.encode()).hexdigest(),
                   warning='기출 정리본 원문과 현행 보충을 구별하세요. 인용본 시행일은 모든 문구의 최초 개정일이 아닙니다. 기존 건축물에는 허가·신고일 및 부칙·경과조치가 적용될 수 있습니다. 확인되지 않은 문항을 현행 적합으로 보증하지 않습니다.')
     text = json.dumps(result, ensure_ascii=False)

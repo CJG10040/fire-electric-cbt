@@ -5,6 +5,58 @@ const SA_LAW_LABELS = {amendment:'개정 내용', correction:'원문 표현·조
 function saLawNeedsUpdate(k) {
   return (SA_LAW.review[k]?.notes || []).some(id => ['amendment','correction','supplement'].includes(SA_LAW_NOTES[id].status));
 }
+function saLawTablesHtml(keys) {
+  return Object.entries(SA_LAW.tables || {}).filter(([,t])=>keys.some(k=>t.links[k])).map(([id,t])=>{
+    const s=SA_LAW.sources[t.source];
+    const hints=[...new Set(keys.map(k=>t.links[k]).filter(Boolean))];
+    return `<details class="sa-law-table"><summary>📋 근거 표 보기 · ${esc(t.title)}</summary>`+
+      `<p class="sa-law-table-version">현행 참고표 · 인용본 시행 ${esc(s.effective)} · 출제 당시 판본을 뜻하지 않습니다.</p>`+
+      hints.map(h=>`<p class="sa-law-table-hint">${esc(h)}</p>`).join('')+
+      `<button type="button" class="sa-law-table-image" onclick="saLawTableOpen('${id}')" aria-label="${esc(t.title)} 확대 보기"><img src="${t.src}" alt="${esc(t.title)} — 비고 포함 공식 원문" loading="lazy"></button>`+
+      `<button type="button" class="btn btn-outline btn-sm" onclick="saLawTableOpen('${id}')">🔍 표 확대 보기</button>`+
+      `<p class="sa-law-table-source">${esc(s.title)} · ${esc(t.provision)}<br><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">공식 기준 원문</a> · <a href="${esc(t.imageUrl)}" target="_blank" rel="noopener noreferrer">공식 표 이미지</a> · 이미지 내장: 오프라인에서도 표시</p></details>`;
+  }).join('');
+}
+let SA_LAW_TABLE_FOCUS=null;
+function saLawTableClose() {
+  const d=document.getElementById('sa-law-table-viewer');
+  if(!d || !d.hasAttribute('open')) return;
+  if(typeof d.close==='function') d.close();
+  d.removeAttribute('open');
+  if(SA_LAW_TABLE_FOCUS?.isConnected) SA_LAW_TABLE_FOCUS.focus();
+  SA_LAW_TABLE_FOCUS=null;
+}
+function saLawTableZoom(delta) {
+  const d=document.getElementById('sa-law-table-viewer');
+  if(!d) return;
+  const z=Math.max(50,Math.min(300,Number(d.dataset.zoom || 100)+delta));
+  d.dataset.zoom=z;
+  d.querySelector('img').style.width=z+'%';
+  d.querySelector('.sa-law-zoom-label').textContent=z+'%';
+}
+function saLawTableOpen(id) {
+  const t=(SA_LAW.tables || {})[id];
+  if(!t) return;
+  let d=document.getElementById('sa-law-table-viewer');
+  if(!d) {
+    d=document.createElement('dialog'); d.id='sa-law-table-viewer';
+    d.setAttribute('aria-labelledby','sa-law-table-viewer-title');
+    d.addEventListener('cancel',e=>{e.preventDefault();saLawTableClose();});
+    d.addEventListener('click',e=>{if(e.target===d) saLawTableClose();});
+    document.body.appendChild(d);
+    document.addEventListener('keydown',e=>{
+      if(e.key==='Escape' || ((e.ctrlKey || e.metaKey) && ['z','y'].includes(e.key.toLowerCase()))) saLawTableClose();
+    },true);
+    window.addEventListener('popstate',saLawTableClose);
+  }
+  SA_LAW_TABLE_FOCUS=document.activeElement;
+  d.dataset.zoom='100';
+  d.innerHTML=`<header><b id="sa-law-table-viewer-title">${esc(t.title)}</b><button type="button" onclick="saLawTableClose()" autofocus>닫기 ✕</button></header>`+
+    `<p class="sa-law-table-version">현행 참고표 · ${esc(SA_LAW.sources[t.source].title)} · 인용본 시행 ${esc(SA_LAW.sources[t.source].effective)} · 출제 당시 판본과 구별하세요.</p>`+
+    '<div class="sa-law-table-toolbar"><button type="button" onclick="saLawTableZoom(-25)" aria-label="표 축소">−</button><span class="sa-law-zoom-label">100%</span><button type="button" onclick="saLawTableZoom(25)" aria-label="표 확대">＋</button><span>확대 후 가로·세로로 스크롤하세요.</span></div>'+
+    `<div class="sa-law-table-canvas"><img src="${t.src}" alt="${esc(t.title)} — 공식 원문 전체" style="width:100%"></div>`;
+  if(typeof d.showModal==='function') d.showModal(); else d.setAttribute('open','');
+}
 function saLawNoteHtml(n) {
   const refs = n.refs.map(r => {
     const s = SA_LAW.sources[r.source];
@@ -14,7 +66,7 @@ function saLawNoteHtml(n) {
   }).join('');
   const body = `<div class="sa-law-content"><ul>${n.lines.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>` +
     (n.change_on ? `<div class="sa-law-date">해당 변경 시행: ${esc(n.change_on)}</div>` : '') +
-    (n.caveat ? `<p class="sa-law-caveat">주의: ${esc(n.caveat)}</p>` : '') +
+    (n.caveat ? `<p class="sa-law-caveat">주의: ${esc(n.caveat)}</p>` : '') + saLawTablesHtml(n.ks) +
     `<details class="sa-law-refs"><summary>근거 조항·공식 원문</summary><ul>${refs}</ul></details></div>`;
   const head = `<span class="sa-law-tag">${esc(SA_LAW_LABELS[n.status])}</span> ${esc(n.title)}`;
   return `<details class="sa-law-note ${n.status}" ${n.status !== 'checked' ? 'open' : ''}><summary>${head}</summary>${body}</details>`;

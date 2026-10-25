@@ -63,4 +63,12 @@ assert '제1호부터 제5호까지 외의 건축물' in ' '.join(byid['exit_fac
 assert byid['construction_alarm']['change_on']=='2023-07-01'
 assert law['review']['k2016_0_06']['status']=='pending'
 assert law['review']['k2013_0_16']['status']=='pending'
+import base64
+table=law['tables']['height']
+assert set(table['links'])=={'k2013_0_01','k2013_0_20','k2019_0_24'}
+image=base64.b64decode(table['src'].split(',',1)[1],validate=True)
+assert image==Path('sa_src/law_tables/height.gif').read_bytes()
+assert hashlib.sha256(image).hexdigest()==table['sha256']
+assert table['source']=='t203' and law['sources']['t203']['effective']=='2026-03-01'
+assert '5%/m' in table['links']['k2013_0_20']
 print('PASS additive law:',len(law['notes']),'notes;',law['counts'],'; 447 source answers, 307 clusters, 145 cards, image-CBT and undo byte-preserved outside SA blocks')

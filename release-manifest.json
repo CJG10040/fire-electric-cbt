@@ -1,6 +1,6 @@
 {
   "release_date": "2026-10-25",
-  "application_sha256": "184bfd3cbb831b1094148ea5ebe75f4508358162305964c1f37414a869ac6637",
+  "application_sha256": "cd93f91699b025ea42fb638a5a0b32aec98751b9d2b587223ae0327f22f4d1e7",
   "questions": 493,
   "explanations": 379,
   "images": 986,
@@ -22,6 +22,11 @@
       "supplement": 38,
       "amendment": 9
     }
+  },
+  "law_tables": {
+    "embedded_images": 1,
+    "linked_clusters": 3,
+    "offline": true
   },
   "pdf_pages": {
     "mnemonic": 22,
@@ -46,8 +51,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 9130,
-      "sha256": "c789249073f877d8f07209f5fbd591583bd04a7ed662660bf5ada08da1a92831"
+      "bytes": 10001,
+      "sha256": "2b283fadc6a593161f7e1c6d762c07711a28c6cb39dd08025b2b72d2e1afda02"
     },
     {
       "path": "build_sa.py",
@@ -76,8 +81,8 @@
     },
     {
       "path": "cbt_v2/cbt.html",
-      "bytes": 1445981,
-      "sha256": "184bfd3cbb831b1094148ea5ebe75f4508358162305964c1f37414a869ac6637"
+      "bytes": 1506021,
+      "sha256": "cd93f91699b025ea42fb638a5a0b32aec98751b9d2b587223ae0327f22f4d1e7"
     },
     {
       "path": "cbt_v2/cbt_data.json",
@@ -5040,6 +5045,11 @@
       "sha256": "851f0985eb413d3cc42028bd7e0bd3b8736cabeea6773c6a9c4d031e26002788"
     },
     {
+      "path": "e2e_sa_tables.js",
+      "bytes": 2708,
+      "sha256": "bae43c8e8f4cc957e2cbdf076bbda082009a910d3099a6b0bdace2b5921bd911"
+    },
+    {
       "path": "e2e_undo.js",
       "bytes": 23238,
       "sha256": "d1cfccd476bff2d09a3dcc577ecc5ecb91de2e9e0e1267684b63aee71c20bd89"
@@ -5071,8 +5081,13 @@
     },
     {
       "path": "sa_law.py",
-      "bytes": 69720,
-      "sha256": "595442d96b9fb039d48fcd32b9e57b49563281c13534c8ec2a5bb346e92dbf85"
+      "bytes": 70021,
+      "sha256": "e228a5a4fc76136421cbc4613c3ac4381605d1bf422aebcd7fc7d955ab1df6de"
+    },
+    {
+      "path": "sa_law_tables.py",
+      "bytes": 1476,
+      "sha256": "b74db89bd8c9b461be7b4b0962850ce6cd7de714e196ea2796bdc48461deddd2"
     },
     {
       "path": "sa_memo_a.py",
@@ -5115,9 +5130,14 @@
       "sha256": "d85bb07a07e56b884ae09019eb44a192ae4c135056cccb90b7121d89c6e17143"
     },
     {
+      "path": "sa_src/law_tables/height.gif",
+      "bytes": 40603,
+      "sha256": "843d5878e7a38367239021debec15c28d4e973064154cdd7989cc2eebc7821c2"
+    },
+    {
       "path": "sa_src/sa.css",
-      "bytes": 12378,
-      "sha256": "9babba8a7a8b951966eb2ad355928a747f9527686b6f38cf0a89242cec135f29"
+      "bytes": 13725,
+      "sha256": "6c825685ce79c2aaa0774a61297c68d308dfd884f1f713aa80f6cc6cc8be1742"
     },
     {
       "path": "sa_src/sa.js",
@@ -5126,8 +5146,8 @@
     },
     {
       "path": "sa_src/sa_law.js",
-      "bytes": 4927,
-      "sha256": "7b5944487a9d362fe915921910af623d66d12885b2776dd0421685bee82691c6"
+      "bytes": 8580,
+      "sha256": "70b65e7da16ec02537340712de04714d046a928723e4f37a2636c34a064b291d"
     },
     {
       "path": "sa_src/sa_screens.html",
@@ -5186,8 +5206,8 @@
     },
     {
       "path": "verify_public_release.py",
-      "bytes": 4165,
-      "sha256": "712692f0d15916ec2719cab36cf553a3a3eb27322c434b7ecd25351decc7f664"
+      "bytes": 4420,
+      "sha256": "3e0939ef07c91b7bf913919e8a91ad86d0f74ea8619d589a0a3fe50aa8ae171a"
     },
     {
       "path": "verify_sa.py",
@@ -5196,8 +5216,8 @@
     },
     {
       "path": "verify_sa_law.py",
-      "bytes": 3583,
-      "sha256": "1071669350103833b0899218a42b481361dfee4765590c3f6de2bbeeed16da76"
+      "bytes": 4016,
+      "sha256": "c853e3fccedb2c3ac62666bae130efbf8347e57de4ebf3f2f84eb39431d729ec"
     },
     {
       "path": "verify_sa_pdf.py",
