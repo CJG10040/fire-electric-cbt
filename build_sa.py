@@ -6,6 +6,7 @@ from pathlib import Path
 import sa_final
 import sa_memo_check
 import sa_memo_lib
+import sa_law
 
 HTML = Path("cbt_v2/cbt.html")
 html = HTML.read_text(encoding="utf-8")
@@ -32,7 +33,16 @@ assert {k for c in memo["cards"] for k in c["ks"]} == known_k, "every cluster ne
 memo_json = json.dumps(memo, ensure_ascii=False, separators=(",", ":"))
 assert not re.search(r"</script|<!--", memo_json, re.I)
 
+# Dated legal supplements are additive; the historical bank/mnemonics above stay unchanged.
+law = sa_law.payload(items, clusters)
+law_json = json.dumps(law, ensure_ascii=False, separators=(",", ":"))
+assert not re.search(r"</script|<!--", law_json, re.I)
+law_js = Path("sa_src/sa_law.js").read_text(encoding="utf-8")
+assert law_js.count("/*SA_LAW_START*/null/*SA_LAW_END*/") == 1
+law_js = law_js.replace("/*SA_LAW_START*/null/*SA_LAW_END*/", "/*SA_LAW_START*/" + law_json + "/*SA_LAW_END*/")
 js = Path("sa_src/sa.js").read_text(encoding="utf-8")
+assert js.count("/*SA_LAW_CODE*/") == 1
+js = js.replace("/*SA_LAW_CODE*/", law_js)
 assert js.count("/*SA_DATA_START*/null/*SA_DATA_END*/") == 1 and js.count("/*SA_MEMO_START*/null/*SA_MEMO_END*/") == 1
 js = js.replace("/*SA_DATA_START*/null/*SA_DATA_END*/", "/*SA_DATA_START*/" + data + "/*SA_DATA_END*/")
 js = js.replace("/*SA_MEMO_START*/null/*SA_MEMO_END*/", "/*SA_MEMO_START*/" + memo_json + "/*SA_MEMO_END*/")

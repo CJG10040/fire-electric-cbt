@@ -1,0 +1,7 @@
+# Keep generated documents/media byte-identical; never treat PDF streams as text.
+*.pdf binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.webp binary

@@ -30,7 +30,7 @@ for k in ('wrong', 'solved', 'history'):
     assert not progress['sa'][k], 'public SA template contains records: ' + k
 
 html = Path('cbt_v2/cbt.html').read_bytes()
-assert hashlib.sha256(html).hexdigest() == '7aed881eea6104408e384b21788f60d0e0277c4d4f85fc8f5ba22827df4eb528', 'unexpected application version'
+assert hashlib.sha256(html).hexdigest() == '184bfd3cbb831b1094148ea5ebe75f4508358162305964c1f37414a869ac6637', 'unexpected application version'
 text = html.decode()
 bank = json.loads(re.search(r'const DB\s*=\s*(\[\s*\{.*?\}\s*\]);', text, re.S).group(1))
 assert len(bank) == 493
@@ -50,9 +50,15 @@ for name in paths:
     assert not pat.search(data), 'credential-like content detected in: ' + name
     records.append({'path': name, 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()})
 
-manifest = {'release_date': '2026-10-24', 'application_sha256': hashlib.sha256(html).hexdigest(),
+law = json.loads(re.search(r'/\*SA_LAW_START\*/(.*?)/\*SA_LAW_END\*/', text, re.S).group(1))
+updated_keys={k for n in law['notes'] if n['status'] in {'amendment','correction','supplement'} for k in n['ks']}
+assert law['asOf']=='2026-10-25' and len(updated_keys)==54 and law['counts']['pending']==14
+manifest = {'release_date': '2026-10-25', 'application_sha256': hashlib.sha256(html).hexdigest(),
             'questions': 493, 'explanations': 379, 'images': 986, 'sa_occurrences': 447,
             'sa_clusters': 307, 'mnemonic_cards': 145, 'comparison_sets': 14,
+            'current_law': {'as_of': law['asOf'], 'updated_clusters': len(updated_keys), 'notes': len(law['notes']),
+                            'sources': len(law['sources']), 'pending': law['counts']['pending'], 'status_counts': law['counts']},
+            'pdf_pages': {'mnemonic': 22, 'practice': 8},
             'private_progress_included': False, 'files': records}
 mp = Path('release-manifest.json')
 if '--write-manifest' in sys.argv:

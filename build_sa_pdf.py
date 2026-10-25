@@ -13,11 +13,13 @@ from __future__ import annotations
 import argparse
 import html as htmllib
 import io
+import json
 import pickle
 import re
 import sys
 from datetime import date
 from pathlib import Path
+from urllib.parse import quote as urlquote
 
 from fontTools import subset
 from fontTools.pens.cu2quPen import Cu2QuPen
@@ -36,6 +38,7 @@ from reportlab.platypus import (BaseDocTemplate, Frame, KeepTogether, NextPageTe
 import sa_final
 import sa_memo_check
 import sa_memo_lib
+import sa_law
 
 FONT_DIR = Path("/usr/share/fonts/noto")
 NAVY = colors.HexColor("#1f3a5f")
@@ -245,12 +248,20 @@ def compare_table(S, fonts, s, width, blank=False):
     return t
 
 
-def compare_block(S, fonts, s, width, blank=False):
+def law_tags(keys, law):
+    changed = [n for n in law['notes'] if n['status'] in {'amendment','correction','supplement'}]
+    return [f'L{i:02d}' for i,n in enumerate(changed,1) if set(keys) & set(n['ks'])]
+
+
+def compare_block(S, fonts, s, width, blank=False, law=None):
     title = fonts.clean(s["t"]).strip()
     hook = rl(fonts, s["h"])
     parts = [Paragraph(f"<b>{htmllib.escape(title, quote=False)}</b>", S["h2"]),
              Paragraph(rl(fonts, s["i"]) + f' &nbsp;<font color="#a06a00"><b>{hook}</b></font>', S["note"]) if not blank else Spacer(1, 0),
              Spacer(1, 2), compare_table(S, fonts, s, width, blank)]
+    tags = law_tags([k for r in s['r'] for k in r['ks']], law) if law else []
+    if tags:
+        parts.append(Paragraph(rl(fonts, '※ 기출 원문 기준. 현행 조건은 ④ 보충편 ' + '·'.join(tags) + ' 대조'), S['trap']))
     if s["l"] and not blank:
         parts.append(Spacer(1, 2))
         parts += [Paragraph("▶ " + rl(fonts, x), S["tl"]) for x in s["l"]]
@@ -272,18 +283,23 @@ def card_flowable(S, fonts, c, meta, width):
     return [t, Spacer(1, 4)]
 
 
-def card_meta(fonts, c, by_id, cl):
+def card_meta(fonts, c, by_id, cl, law=None):
     n = sum(len(cl[k]["m"]) for k in c["ks"])
     years = sorted({by_id[m]["y"] for k in c["ks"] for m in cl[k]["m"]}, reverse=True)
     rep = by_id[cl[c["ks"][0]]["rep"]]["t"]
     kind = f"관련 출제 {n}회 · 문제 {len(c['ks'])}개" if len(c["ks"]) > 1 else f"출제 {n}회"
     ys = "·".join(str(y) for y in years)
     extra = f" 외 {len(c['ks']) - 1}문제" if len(c["ks"]) > 1 else ""
-    return htmllib.escape(fonts.clean(f"{kind} ({ys}) │ {rep}{extra}"), quote=False)
+    tags = law_tags(c['ks'], law) if law else []
+    suffix = ' │ 현행 보충 ' + '·'.join(tags) if tags else ''
+    return htmllib.escape(fonts.clean(f"{kind} ({ys}) │ {rep}{extra}" + suffix), quote=False)
 
 
 def build(outdir: Path):
     items, clusters, memo, by_id, cl = load_data()
+    law = sa_law.payload(items, clusters)
+    changed_notes = [n for n in law['notes'] if n['status'] in {'amendment','correction','supplement'}]
+    update_keys = {k for n in changed_notes for k in n['ks']}
     fonts = Fonts()
     cards, comps = memo["cards"], memo["compares"]
     weight = lambda c: sum(len(cl[k]["m"]) for k in c["ks"])
@@ -299,33 +315,36 @@ def build(outdir: Path):
         for r in s["r"]:
             all_text += [plain(r["lb"]), plain(r["v"]), plain(r["n"])]
     all_text += list(topics) + [by_id[m]["t"] for c in clusters for m in [c["rep"]]]
+    all_text.append(json.dumps(law, ensure_ascii=False))
     all_text.append(Path(__file__).read_text(encoding="utf-8"))
     all_text.append("0123456789 .,:;()[]/·~-+%<>=*&'\"!?")
     chars = set(fonts.clean("".join(all_text))) | set(Path(__file__).read_text(encoding="utf-8"))
     fonts.register(chars, outdir)
     S = styles()
 
-    today = date.today().isoformat()
+    today = law['asOf']
     n_occ = sum(len(c["m"]) for c in clusters)
     disclaimer = ("※ 정답·숫자는 <b>단답·서술 정리본(영상 요약본) 정답과 자동 대조</b>한 것이며, 두음·이야기는 제가 만든 암기 보조일 뿐 법령 문구가 아닙니다. "
-                  "화재안전기준은 개정되므로 시험 직전 최신 기준(NFTC)을 한 번 더 확인하세요.")
+                  "①~③은 기출 원문 기준이며 현행 정답 보증이 아닙니다. 원문을 삭제하지 않고 <b>④ 현행 기준 보충편</b>을 추가했습니다. "
+                  "보충 번호가 표시된 카드·비교표는 먼저 ④와 대조하세요. 일부 KS·KEC·제품별 조건은 확인 보류입니다.")
 
     def front(story):
         story += [Spacer(1, 40 * mm), Paragraph("소방설비산업기사 전기 실기", S["sub"]),
                   Paragraph("단답·서술 암기노트", S["title"]),
                   Paragraph("헷갈리는 숫자·비슷한 개념을 암기법으로 잡는 인쇄용 요약", S["sub"]), Spacer(1, 12 * mm)]
-        info = [["구성", f"① 시험 직전 훅 요약  ② 숫자 비교표 {len(comps)}세트  ③ 암기법 카드 {len(cards)}장(주제별, 많이 출제된 순)"],
+        info = [["구성", f"① 기출 훅 요약  ② 원문 숫자 비교표 {len(comps)}세트  ③ 원문 암기카드 {len(cards)}장  ④ 현행 기준 보충편"],
                 ["범위", f"단답·서술 정리본 {n_occ}문항 → 중복 묶음 {len(clusters)}문항을 카드 {len(cards)}장이 모두 포함"],
                 ["보는 법", "1) 비교표로 숫자를 한 번에  2) 카드의 굵은 글씨·형광펜(두음)부터  3) ※ 함정 문장 확인  4) 연습지로 정답을 가리고 써 보기"],
-                ["작성일", today]]
+                ["법령 대조", f"{law['asOf']} 기준 · 개정/정정/조건 보충 {len(update_keys)}문항 · 추가 확인 {law['counts'].get('pending',0)}문항"],
+                ["기준일", today]]
         t = Table([[Paragraph(f"<b>{a}</b>", S["cell"]), Paragraph(rl(fonts, b), S["cell"])] for a, b in info], colWidths=[22 * mm, 150 * mm], hAlign="LEFT")
         t.setStyle(TableStyle([("LINEBELOW", (0, 0), (-1, -1), 0.4, LINE), ("VALIGN", (0, 0), (-1, -1), "TOP"),
                                ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5)]))
-        story += [t, Spacer(1, 10 * mm), Paragraph(rl(fonts, disclaimer), S["note"])]
+        story += [t, Spacer(1, 10 * mm), Paragraph(rl(fonts, disclaimer), S["body"])]
 
     # ================= main PDF
     main = outdir / "소방설비산업기사_단답암기노트_인쇄용.pdf"
-    doc = Doc(main, "소방설비산업기사 전기 실기 · 단답·서술 암기노트")
+    doc = Doc(main, "소방 전기 실기 · 원문 암기 + 현행 보충 " + law['asOf'])
     story = []
     front(story)
     story += [NextPageTemplate("one"), PageBreak()]
@@ -333,9 +352,13 @@ def build(outdir: Path):
     # ---- 1. 훅 요약 (출제 3회 이상)
     hot = sorted([c for c in cards if weight(c) >= 3], key=lambda c: (-weight(c), topic(c)))
     story.append(Paragraph(f"① 시험 직전 훅 요약 — 출제 3회 이상 {len(hot)}장", S["h1"]))
-    story.append(Paragraph("한 줄 훅만 모았습니다. 막히는 줄은 ③ 카드에서 자세히 확인하세요. (괄호 = 관련 출제 횟수)", S["note"]))
+    story.append(Paragraph("기출 원문 훅입니다. 현행 법령 정답으로 그대로 암기하지 마세요. 막히는 줄은 ③ 카드, 변경·추가조건은 ④ 보충편을 확인하세요. (괄호 = 관련 출제 횟수)", S["note"]))
     story.append(Spacer(1, 3))
-    rows = [Paragraph(f'<font color="#4d5a66">[{weight(c)}]</font> ' + rl(fonts, c["h"]), S["hot"]) for c in hot]
+    rows = []
+    for c in hot:
+        tags=law_tags(c['ks'],law)
+        warning=' <font color="#b03920" size="7">[현행 '+ '·'.join(tags)+']</font>' if tags else ''
+        rows.append(Paragraph(f'<font color="#4d5a66">[{weight(c)}]</font> '+rl(fonts,c['h'])+warning,S['hot']))
     # balance the two columns by estimated height (long hooks wrap to two lines)
     est = [1 + len(plain(c["h"])) // 34 for c in hot]
     acc, cut = 0, len(rows)
@@ -354,7 +377,7 @@ def build(outdir: Path):
     story.append(Paragraph("같은 숫자가 여러 곳에 나오거나 이름이 비슷한 항목을 한 장씩 묶었습니다. 행의 값을 손으로 가리고 맞춰 보세요.", S["note"]))
     story.append(Spacer(1, 4))
     for s in comps:
-        story.append(compare_block(S, fonts, s, doc.fullw))
+        story.append(compare_block(S, fonts, s, doc.fullw, law=law))
     story += [NextPageTemplate("two"), PageBreak()]
 
     # ---- 3. 카드
@@ -367,18 +390,46 @@ def build(outdir: Path):
             continue
         head = Paragraph(f"{htmllib.escape(fonts.clean(tname), quote=False)} ({len(tc)}장)", S["h2"])
         for j, c in enumerate(tc):
-            fl = card_flowable(S, fonts, c, card_meta(fonts, c, by_id, cl), doc.colw)
+            fl = card_flowable(S, fonts, c, card_meta(fonts, c, by_id, cl, law), doc.colw)
             story.append(KeepTogether(([head] if j == 0 else []) + fl))
+    # ---- 4. Additive current-law supplement; original mnemonic payload stays intact.
+    story += [NextPageTemplate('one'), PageBreak(), Paragraph('④ 현행 기준 보충편', S['h1'])]
+    intro = (f"{law['asOf']} 기준 · 개정/정정/조건 보충 {len(update_keys)}문항 · 보충 {len(changed_notes)}건 · "
+             "이 인쇄편은 개정·정정·조건 보충 메모를 수록하며 나머지 인용 항목 확인 메모는 CBT를 참고하세요. 전체 문항·모든 변형의 적합 보증이 아닙니다. "
+             "출처 시행일은 각 문구 최초 개정일과 다르며 건축허가·신고·착공 및 부칙·경과조치를 별도 확인해야 합니다.")
+    story += [Paragraph(rl(fonts,intro), S['note']), Spacer(1,8)]
+    labels = {'amendment':'개정','correction':'원문 조건·표현 정정','supplement':'현행 조건 보충'}
+    for i,n in enumerate(changed_notes,1):
+        title = f"L{i:02d} [{labels[n['status']]}] {n['title']}"
+        names = ' / '.join(dict.fromkeys(by_id[cl[k]['rep']]['t'] for k in n['ks']))
+        story.append(KeepTogether([Paragraph(rl(fonts,title),S['h2']), Paragraph(rl(fonts,'관련 문항: '+names),S['note']), Paragraph(rl(fonts,'• '+n['lines'][0]),S['body'])]))
+        for line in n['lines'][1:]:
+            story.append(Paragraph(rl(fonts,'• '+line),S['body']))
+        if n['change_on']:
+            story.append(Paragraph(rl(fonts,'해당 변경 시행: '+n['change_on']),S['note']))
+        if n['caveat']:
+            story.append(Paragraph(rl(fonts,'※ '+n['caveat']),S['trap']))
+        for ref in n['refs']:
+            src=law['sources'][ref['source']]
+            label=src['title']+' · '+ref['provision']+' · 인용본 시행 '+(src['effective'] or '해당 없음')
+            link=htmllib.escape(urlquote(src['url'],safe=':/?=&#(),%'),quote=True)
+            story.append(Paragraph(f'<link href="{link}" color="#145b8f">근거: '+rl(fonts,label)+'</link>',S['note']))
+        story.append(Spacer(1,8))
+    pending=[c for c in clusters if law['review'][c['k']]['status']=='pending']
+    story += [PageBreak(), Paragraph(f'추가 확인 {len(pending)}문항 — 현행 확인 완료 아님',S['h1']),
+              Paragraph(rl(fonts,'KS·KEC 원문, 현행 자체점검표, 제품별 시험조건을 충분히 대조하지 못한 문항입니다. 아래 정리본 정답을 법령 검증 완료로 외우지 마세요.'),S['body'])]
+    for c in pending:
+        story.append(Paragraph(rl(fonts,'• '+by_id[c['rep']]['t']),S['body']))
     doc.build(story)
 
     # ================= practice PDF
     prac = outdir / "소방설비산업기사_숫자비교_연습지_인쇄용.pdf"
-    d2 = Doc(prac, "소방설비산업기사 · 숫자 비교 연습지")
+    d2 = Doc(prac, '소방 전기 실기 · 기출 원문 연습지 · 현행 보충편 별도 확인')
     st2 = [Paragraph("숫자 비교 연습지", S["title"]),
-           Paragraph("정답 칸을 비워 둔 비교표입니다. 손으로 써 본 뒤 「단답 암기노트」 ② 비교표와 맞춰 보세요. 틀린 줄에 형광펜을 칠해 두면 복습이 빨라집니다.", S["sub"]),
+           Paragraph('기출 정리본 원문을 쓰는 연습지이며 현행 법령 정답만을 묻는 시험지가 아닙니다. ② 원문 비교표로 대조한 뒤, 보충 번호가 있는 항목은 ④ 현행 기준 보충편의 조건·경계값을 별도로 확인하세요.', S['sub']),
            Spacer(1, 6 * mm)]
     for s in comps:
-        st2.append(compare_block(S, fonts, s, d2.fullw, blank=True))
+        st2.append(compare_block(S, fonts, s, d2.fullw, blank=True, law=law))
     d2.build(st2)
 
     if fonts.dropped:

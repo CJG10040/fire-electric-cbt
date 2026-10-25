@@ -11,7 +11,9 @@ SA_BANK.clusters.forEach(c => { SA_CL[c.k] = c; });
 const SA_TOPICS = SA_BANK.topics;
 const SA_KIND = { '단답':'단답형', '서술':'서술형', '빈칸':'빈칸 채우기', '택일':'택일형' };
 
-// 암기법 데이터: 카드(ks = 설명하는 묶음들) + 비교 세트. 모든 숫자·용어는 빌드 때 정리본 정답과 자동 대조됨.
+/*SA_LAW_CODE*/
+
+// 암기법 데이터: 원문 정리본 대조는 법령 검증이 아님. 현행 보충을 별도로 표시한다.
 const SA_MEMO = /*SA_MEMO_START*/null/*SA_MEMO_END*/;
 const SA_CARD_BY_K = {};
 SA_MEMO.cards.forEach((c, i) => c.ks.forEach(k => { SA_CARD_BY_K[k] = i; }));
@@ -108,7 +110,8 @@ function saRenderHub() {
   const repeated = SA_BANK.clusters.filter(c => c.m.length > 1).length;
   document.getElementById('sa-note').innerHTML =
     `출처: 단답형·서술형 암기영상 정리본(비공식) ${SA_BLOCKS.length}개 영상 · 원본 ${total}문항을 동일 질문끼리 묶어 <b>${uniq}문항</b>(2회 이상 출제 ${repeated}개)으로 정리했습니다. ` +
-    `전체·주제별은 묶음당 대표(최신 출제본) 1문항만 출제하고, 연도별은 그 해 문항을 그대로 출제합니다. 정답은 정리본 원문이며 기준 개정은 별도 확인이 필요합니다.`;
+    `전체·주제별은 묶음당 대표(최신 출제본) 1문항만 출제하고, 연도별은 그 해 문항을 그대로 출제합니다. 원문 정답을 보존하고 현행 대조 메모를 정답 공개 후 따로 표시합니다.`;
+  document.getElementById('sa-law-summary').innerHTML = saLawSummaryHtml();
   const solvedSet = new Set(STORE.sa.solved);
   document.getElementById('sa-stats').innerHTML = [
     [uniq, '고유 문항'], [total, '원본 출제 건수'],
@@ -253,7 +256,7 @@ function saRenderQuestion() {
 
 function saAnswerHtml(u) {
   const o = SA_OCC[u.id], k = u.k, c = SA_CL[k];
-  const pick = o.pk ? `<div class="sa-pick">💡 보기 중 <b>${o.pk}가지</b>만 쓰면 정답으로 인정됩니다. 전부 외워 두는 것이 안전합니다.</div>` : '';
+  const pick = o.pk ? `<div class="sa-pick">💡 원문 요구: <b>${o.pk}가지</b> 작성. 과거 정답과 현행 보충·출제 조건을 구분해서 학습하세요.</div>` : '';
   const note = c.nt ? `<div class="sa-note-box">⚠️ ${esc(c.nt)}</div>` : '';
   const diffNote = (c.ad && !c.nt) ? `<div class="sa-note-box">⚠️ 출제본마다 숫자·항목 표기가 다릅니다. 아래 '출제 이력'에서 연도별 정답을 비교하세요.</div>` : '';
   // dq/da are measured against the cluster's representative; show another occurrence's own text only when it differs from the one on screen
@@ -263,7 +266,7 @@ function saAnswerHtml(u) {
     const m = SA_OCC[id], here = id === u.id, url = saVideoUrl(m);
     let body = '';
     if (!here && differs(m)) {
-      body = `<div class="sa-var"><span class="lbl">문제</span><div class="sa-q">${m.qh}</div><span class="lbl" style="margin-top:6px">정답</span><div class="sa-a">${m.ah}</div></div>`;
+      body = `<div class="sa-var"><span class="lbl">문제</span><div class="sa-q">${m.qh}</div><span class="lbl" style="margin-top:6px">원문 정답</span><div class="sa-a">${m.ah}</div>${saLawBox(k)}</div>`;
     } else if (!here) {
       body = '<div class="sa-same">질문·정답이 위와 같음(표기 차이 가능)</div>';
     }
@@ -271,7 +274,7 @@ function saAnswerHtml(u) {
       (url ? `<a href="${url}" target="_blank" rel="noopener noreferrer">▶ 해설영상 ${saMMSS(m.s)}</a>` : '') + `</div>${body}</div>`;
   }).join('');
   const hist = `<details class="sa-hist"><summary>📅 출제 이력 ${c.m.length}회 · 연도별 보기</summary><div class="sa-hist-body">${rows}</div></details>`;
-  return `${pick}${note}${diffNote}<div class="sa-a">${o.ah}</div>${saMemoBox(k)}${hist}`;
+  return `${pick}${note}${diffNote}<div class="sa-original-label">📚 기출 정리본 정답 (원문 보존)</div><div class="sa-a">${o.ah}</div>${saLawBox(k)}${saMemoBox(k)}${hist}`;
 }
 
 function saToggleAnswer(k) {
@@ -374,7 +377,7 @@ function saRenderResult(filter) {
   document.getElementById('sa-res-list').innerHTML = items.map(u => {
     const o = SA_OCC[u.id], g = S.answers[u.k] || 'U';
     return `<details class="sa-res-item ${g}"><summary><span class="tt">${esc(o.t)}<br><span style="font-size:.72rem;color:var(--gray)">${esc(saTopicOf(u.k))} · 출제 ${saCount(u.k)}회 · ${saYears(u.k)}</span></span><span>${mark[g]}</span></summary>
-      <div class="body"><span class="lbl">문제</span><div class="sa-q">${o.qh}</div><span class="lbl">정답</span><div class="sa-a">${o.ah}</div>${saMemoBox(u.k)}</div></details>`;
+      <div class="body"><span class="lbl">문제</span><div class="sa-q">${o.qh}</div><span class="lbl">원문 정답</span><div class="sa-a">${o.ah}</div>${saLawBox(u.k)}${saMemoBox(u.k)}</div></details>`;
   }).join('') || '<div style="color:var(--gray);padding:20px;text-align:center">해당 문제 없음</div>';
 }
 
@@ -419,7 +422,7 @@ function saRenderWrong() {
           <span class="sa-wn-cnt">오답 ${wrong[k] || 1}회</span></div>
         <div class="sa-wn-title">${esc(o.t)}</div></summary>
       <div class="sa-wn-body"><span class="lbl">문제</span><div class="sa-q">${o.qh}</div>
-        <span class="lbl">정답</span><div class="sa-a">${o.ah}</div>${saMemoBox(k)}
+        <span class="lbl">원문 정답</span><div class="sa-a">${o.ah}</div>${saLawBox(k)}${saMemoBox(k)}
         <div class="sa-years" style="margin-top:8px">출제 연도: ${saYears(k, o.id)}</div>
         <div class="sa-wn-actions"><button class="btn btn-success btn-sm" onclick="saRemoveWrong('${k}')">✓ 외웠어요 (오답노트에서 제거)</button></div></div></details>`;
   }).join('');
@@ -460,7 +463,7 @@ function saMemoBox(k) {
   const ci = SA_CARD_BY_K[k];
   const cmp = SA_CMP_BY_K[k] || [];
   if (ci === undefined && !cmp.length) return '';
-  let html = '<div class="sa-memo-box"><div class="sa-memo-title">🧠 암기법</div>';
+  let html = '<div class="sa-memo-box"><div class="sa-memo-title">🧠 암기법 · 원문 기준</div>' + saLawMemoAlert(ci === undefined ? [k] : SA_MEMO.cards[ci].ks);
   if (ci !== undefined) {
     const c = SA_MEMO.cards[ci];
     html += `<div class="sa-memo-hook">${c.h}</div><ul class="sa-memo-lines">${c.l.map(x => `<li>${x}</li>`).join('')}</ul>`;
@@ -485,7 +488,7 @@ function saRenderMemo() {
     `<button type="button" class="${SA_MEMO_UI.tab === t ? 'on' : ''}" onclick="saMemoTab('${t}')">${l}</button>`).join('');
   document.getElementById('sa-memo-intro').innerHTML =
     `헷갈리는 숫자·비슷한 개념을 <b>비교표 → 암기법 카드 → 카드 훈련 → 문제 풀이</b> 순서로 잡아 보세요. 카드 ${SA_MEMO.cards.length}장이 고유 ${SA_BANK.clusters.length}문항을 모두 덮습니다. ` +
-    `숫자·용어는 정리본 정답과 자동 대조했고, 두음·이야기는 암기 보조일 뿐 법령 문구가 아닙니다(기준 개정은 별도 확인).`;
+    `숫자·용어는 <b>과거 정리본</b> 대조 결과이며 현행 적합 판정이 아닙니다. <b>⚖️ 현행 보충을 우선 확인</b>하세요. 인쇄 암기노트는 ①~③ 기출 원문 + ④ 현행 보충편입니다. 숫자 연습지는 기출 원문을 쓴 뒤 보충 번호로 현행 조건을 대조하세요.`;
   if (SA_MEMO_UI.tab === 'cmp') saRenderMemoCmp();
   else if (SA_MEMO_UI.tab === 'cards') saRenderMemoCards();
   else saRenderFlash();
@@ -519,6 +522,7 @@ function saRenderMemoCmp() {
         <div class="sa-cmp-tools"><button type="button" class="btn btn-outline btn-sm" onclick="saCmpHide('${s.id}')">🙈 값 가리기 / 보이기</button>
           <span class="sa-same">가린 뒤에 탭하면 한 줄씩 공개됩니다 · 📝 = 그 항목 문제 풀기</span></div>
         <div class="sa-cmp-rows">${rows}</div>
+        ${saLawMemoAlert(s.r.flatMap(r=>r.ks))}${saLawRelated(s.r.flatMap(r=>r.ks))}
         ${s.l.length ? `<ul class="sa-memo-lines">${s.l.map(x => `<li>${x}</li>`).join('')}</ul>` : ''}
       </div></details>`;
   }).join('');
@@ -579,15 +583,17 @@ function saRenderMemoList() {
     const rel = c.ks.map(k => {
       const ro = saRep(k);
       return `<details class="sa-memo-rel"><summary>${esc(ro.t)} <span class="sa-same">· 출제 ${saCount(k)}회 · ${saYears(k)}</span></summary>
-        <div class="sa-var"><span class="lbl">문제</span><div class="sa-q">${ro.qh}</div><span class="lbl" style="margin-top:6px">정답</span><div class="sa-a">${ro.ah}</div>
+        <div class="sa-var"><span class="lbl">문제</span><div class="sa-q">${ro.qh}</div><span class="lbl" style="margin-top:6px">원문 정답</span><div class="sa-a">${ro.ah}</div>${saLawBox(k)}
         <div class="sa-wn-actions"><button type="button" class="btn btn-outline btn-sm" onclick="saMemoPractice('${k}')">📝 이 문제 풀기</button></div></div></details>`;
     }).join('');
     const cmp = [...new Set(c.ks.flatMap(k => SA_CMP_BY_K[k] || []))];
     return `<div class="sa-memo-card">
       <div class="sa-memo-head">${badge}<span class="q-cat-badge">${esc(saTopicOf(first))}</span>
         <span class="sa-memo-qt">${esc(o.t)}${c.ks.length > 1 ? ` 외 ${c.ks.length - 1}문제` : ''}</span></div>
+      ${saLawMemoAlert(c.ks)}
       <div class="sa-memo-hook">${c.h}</div>
       <ul class="sa-memo-lines">${c.l.map(x => `<li>${x}</li>`).join('')}</ul>
+      ${saLawRelated(c.ks)}
       ${c.t ? `<div class="sa-memo-trap">⚠️ ${c.t}</div>` : ''}
       <details class="sa-memo-ans"><summary>🙈 관련 문제·정답 확인 (${c.ks.length}개)</summary>${rel}</details>
       <div class="sa-memo-cmps">${cmp.map(id => `<button type="button" class="sa-cmp-link" onclick="saMemoGoCompare('${id}')">🔢 ${esc(SA_CMP_BY_ID[id].t)}</button>`).join('')}
@@ -635,8 +641,8 @@ function saRenderFlash() {
   }
   const k = F.deck[F.i], o = saRep(k), ci = SA_CARD_BY_K[k], c = SA_MEMO.cards[ci];
   let body = `<div class="sa-title">${esc(o.t)}</div><div class="sa-q">${o.qh}</div>`;
-  if (F.stage >= 1) body += `<div class="sa-memo-box"><div class="sa-memo-title">💡 힌트</div><div class="sa-memo-hook">${c.h}</div></div>`;
-  if (F.stage >= 2) body += `<div class="answer-reveal show"><div class="answer-reveal-body" style="display:block"><div class="sa-a">${o.ah}</div>${saMemoBox(k)}</div></div>`;
+  if (F.stage >= 1) body += `<div class="sa-memo-box"><div class="sa-memo-title">💡 힌트</div><div class="sa-memo-hook">${c.ks.some(saLawNeedsUpdate) ? '현행 보충이 있는 암기법입니다. 정답을 열어 과거 표현과 현재 조건을 함께 확인하세요.' : c.h}</div></div>`;
+  if (F.stage >= 2) body += `<div class="answer-reveal show"><div class="answer-reveal-body" style="display:block"><div class="sa-original-label">📚 기출 정리본 정답 (원문 보존)</div><div class="sa-a">${o.ah}</div>${saLawBox(k)}${saMemoBox(k)}</div></div>`;
   const btns = F.stage === 0
     ? `<button class="btn btn-outline" onclick="saFlashStage(1)">💡 힌트(암기법)</button><button class="btn btn-primary" onclick="saFlashStage(2)">정답 확인</button>`
     : F.stage === 1

@@ -47,6 +47,30 @@ for s in memo["compares"]:
                 miss.append(("prac-label", s["id"], want[:40]))
             if frag == r["v"] and len(want) > 4 and want in P_rest:
                 miss.append(("prac-leak", s["id"], want[:40]))   # 연습지에 정답이 새면 안 됨
+law=b.sa_law.payload(items,clusters)
+changed=[n for n in law['notes'] if n['status'] in {'amendment','correction','supplement'}]
+law_pages=[norm(p) for p in text(main).split('\f') if p.strip()]
+assert all(len(p)>80 for p in law_pages), 'unexpected blank or footer-only page'
+for i,n in enumerate(changed,1):
+    title=norm(fonts.clean(n['title']))
+    first=norm(fonts.clean(b.plain(n['lines'][0])))
+    assert any(norm(f'L{i:02d}') in p and title in p and first in p for p in law_pages), ('orphan law heading',n['id'])
+    for frag in [f'L{i:02d}',n['title'],*n['lines'],n['caveat'],n['change_on']]:
+        want=norm(fonts.clean(b.plain(frag)))
+        if want and want not in T:
+            miss.append(('law',n['id'],want[:70]))
+for c in clusters:
+    if law['review'][c['k']]['status']=='pending':
+        want=norm(fonts.clean(by_id[c['rep']]['t']))
+        if want not in T: miss.append(('pending',c['k'],want))
+assert norm('④ 현행 기준 보충편') in T
+assert norm(law['asOf']) in T
+assert norm('기출 정리본 원문을 쓰는 연습지') in P
+assert norm('현행 법령 정답만을 묻는 시험지가 아닙니다') in P
+links=subprocess.run(['pdfinfo','-url',str(main)],capture_output=True,text=True,check=True).stdout
+for n in changed:
+    for ref in n['refs']:
+        assert b.urlquote(law['sources'][ref['source']]['url'],safe=':/?=&#(),%') in links, ('missing official PDF link',n['id'])
 bad = [ch for ch in set(text(main) + text(prac)) if ch in "\ufffd□☒"]
 fnt = subprocess.run(["pdffonts", str(main)], capture_output=True, text=True).stdout
 not_emb = [l for l in fnt.splitlines()[2:] if l.split()[-5] != "yes"]
@@ -54,4 +78,4 @@ pages = int(re.search(r"Pages:\s+(\d+)", subprocess.run(["pdfinfo", str(main)], 
 assert not miss, f"missing in PDF text: {miss[:8]} (+{len(miss)})"
 assert not bad, f"broken glyphs: {bad}"
 assert not not_emb, not_emb
-print(f"PASS: {len(memo['cards'])} cards + {len(memo['compares'])} compare sets present in text; practice sheet has no answers; fonts embedded; {pages} pages")
+print(f"PASS: {len(memo['cards'])} cards + {len(memo['compares'])} compare sets; {len(changed)} current-law supplements/official links + pending list; practice sheet has no answers; fonts embedded; {pages} pages")

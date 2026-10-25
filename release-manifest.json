@@ -1,6 +1,6 @@
 {
-  "release_date": "2026-10-24",
-  "application_sha256": "7aed881eea6104408e384b21788f60d0e0277c4d4f85fc8f5ba22827df4eb528",
+  "release_date": "2026-10-25",
+  "application_sha256": "184bfd3cbb831b1094148ea5ebe75f4508358162305964c1f37414a869ac6637",
   "questions": 493,
   "explanations": 379,
   "images": 986,
@@ -8,8 +8,32 @@
   "sa_clusters": 307,
   "mnemonic_cards": 145,
   "comparison_sets": 14,
+  "current_law": {
+    "as_of": "2026-10-25",
+    "updated_clusters": 54,
+    "notes": 92,
+    "sources": 34,
+    "pending": 14,
+    "status_counts": {
+      "checked": 130,
+      "technical": 109,
+      "pending": 14,
+      "correction": 7,
+      "supplement": 38,
+      "amendment": 9
+    }
+  },
+  "pdf_pages": {
+    "mnemonic": 22,
+    "practice": 8
+  },
   "private_progress_included": false,
   "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 162,
+      "sha256": "eb4da3b5bb8d1c02aeef8bfb55ca35fae4d09c836670bf3adc5ffd2a2e2748ae"
+    },
     {
       "path": ".gitignore",
       "bytes": 566,
@@ -22,18 +46,18 @@
     },
     {
       "path": "README.md",
-      "bytes": 7049,
-      "sha256": "056ddcf16a36fba0028ff8ca6bcb074275bc666b1bf77b2d33a0fc79e77c72bb"
+      "bytes": 9130,
+      "sha256": "c789249073f877d8f07209f5fbd591583bd04a7ed662660bf5ada08da1a92831"
     },
     {
       "path": "build_sa.py",
-      "bytes": 2850,
-      "sha256": "358a52027de4e54cda789ddcc67739d317ef774360f9c9654dbb819e4a6c599f"
+      "bytes": 3439,
+      "sha256": "10be342896b59bfa700f5c69d4d662364289e54e9091fe8a983a369e66b97c1c"
     },
     {
       "path": "build_sa_pdf.py",
-      "bytes": 19942,
-      "sha256": "457dadfcc6c999b0191523185385cd74f6b6293a9a70949a2b8320471918f45c"
+      "bytes": 24168,
+      "sha256": "8fb2619e751f2f25d932347bd0f6ed3d1fc5f96714e7b6a6d1793a6f7a2dbd40"
     },
     {
       "path": "build_undo.py",
@@ -47,13 +71,13 @@
     },
     {
       "path": "cbt_v2/README.md",
-      "bytes": 1132,
-      "sha256": "361a5fa7d5863849b017391a2ec49f176fd773002a23f1bdbef373b90046a500"
+      "bytes": 1554,
+      "sha256": "7de56e7ced6b310d886b3883b7f18dc5412d75052e37509a7bcb2588c2cb4c50"
     },
     {
       "path": "cbt_v2/cbt.html",
-      "bytes": 1320802,
-      "sha256": "7aed881eea6104408e384b21788f60d0e0277c4d4f85fc8f5ba22827df4eb528"
+      "bytes": 1445981,
+      "sha256": "184bfd3cbb831b1094148ea5ebe75f4508358162305964c1f37414a869ac6637"
     },
     {
       "path": "cbt_v2/cbt_data.json",
@@ -4992,23 +5016,28 @@
     },
     {
       "path": "downloads/index.html",
-      "bytes": 1333,
-      "sha256": "f5a7146ad4021b7725b7342a3c1f147fe22c55a4cc379ee3c6e02d0a0a37b88f"
+      "bytes": 1699,
+      "sha256": "70939868b030a6664dd329b63cbe24565f143692d0b30d2bf52e56e9738a5d63"
     },
     {
       "path": "downloads/소방설비산업기사_단답암기노트_인쇄용.pdf",
-      "bytes": 186922,
-      "sha256": "983c45444c6841e831dff05223afee57ccc85129c4067ede9dc4c257ef8c9cdc"
+      "bytes": 233339,
+      "sha256": "a9dda792c0730fcc564db32a9a2a7a2d29d56ac184a1f0700069a7f871974bf0"
     },
     {
       "path": "downloads/소방설비산업기사_숫자비교_연습지_인쇄용.pdf",
-      "bytes": 57528,
-      "sha256": "1187683fccc43348c899b9c82a094800e9ba97858a84f4f92cd0b5a207b4f651"
+      "bytes": 57959,
+      "sha256": "ec3f35682ba45ed51f15670e9f9fc7ecd707dee249ca6f9a4d28205cc9c1328e"
     },
     {
       "path": "e2e_jsdom.js",
       "bytes": 12508,
       "sha256": "9d14604957a998f62385fd406d1e992cd4611b5c96ad0ebabab845b3218833b2"
+    },
+    {
+      "path": "e2e_sa_law.js",
+      "bytes": 4776,
+      "sha256": "851f0985eb413d3cc42028bd7e0bd3b8736cabeea6773c6a9c4d031e26002788"
     },
     {
       "path": "e2e_undo.js",
@@ -5039,6 +5068,11 @@
       "path": "sa_final.py",
       "bytes": 8312,
       "sha256": "d817a71642d92a62d99f18c854af5dd98e78f41c9e47faba285878e93ed8bd32"
+    },
+    {
+      "path": "sa_law.py",
+      "bytes": 69720,
+      "sha256": "595442d96b9fb039d48fcd32b9e57b49563281c13534c8ec2a5bb346e92dbf85"
     },
     {
       "path": "sa_memo_a.py",
@@ -5082,18 +5116,23 @@
     },
     {
       "path": "sa_src/sa.css",
-      "bytes": 10053,
-      "sha256": "78dba86847ff6a801d8d49de1500f0757167eb568905bf2bdfeadb5e03c463d3"
+      "bytes": 12378,
+      "sha256": "9babba8a7a8b951966eb2ad355928a747f9527686b6f38cf0a89242cec135f29"
     },
     {
       "path": "sa_src/sa.js",
-      "bytes": 39415,
-      "sha256": "9305281c84125d285007bd7faeb32849e1217b131ac47e1e1c64d8955d2c310e"
+      "bytes": 40310,
+      "sha256": "d24aae660160864c19dddf037f2746eb75db340bf8908a88ed85bded5addd353"
+    },
+    {
+      "path": "sa_src/sa_law.js",
+      "bytes": 4927,
+      "sha256": "7b5944487a9d362fe915921910af623d66d12885b2776dd0421685bee82691c6"
     },
     {
       "path": "sa_src/sa_screens.html",
-      "bytes": 7096,
-      "sha256": "de19951aad900e8466140e7931d942721d662545475c8864f0c5abbd5e32d929"
+      "bytes": 7132,
+      "sha256": "9fca6cb4808eab0c93021128d8e47c95ace162e1babef049467df5cc04f8a544"
     },
     {
       "path": "smoke_sa.js",
@@ -5147,8 +5186,8 @@
     },
     {
       "path": "verify_public_release.py",
-      "bytes": 3561,
-      "sha256": "90cf23c62b425de4a46ca38d26e31c3317e1c7c71dd0ad69c36512234c8a008b"
+      "bytes": 4165,
+      "sha256": "712692f0d15916ec2719cab36cf553a3a3eb27322c434b7ecd25351decc7f664"
     },
     {
       "path": "verify_sa.py",
@@ -5156,9 +5195,14 @@
       "sha256": "2ef967a6e4ff2bdb68b5a143564c7b8165c835f7e3575a1ddf894571f65f1346"
     },
     {
+      "path": "verify_sa_law.py",
+      "bytes": 3583,
+      "sha256": "1071669350103833b0899218a42b481361dfee4765590c3f6de2bbeeed16da76"
+    },
+    {
       "path": "verify_sa_pdf.py",
-      "bytes": 2875,
-      "sha256": "464dc7c87449f61f9232ff5a1a64d58048ccfbc49a30e7d5d741d1f10f236f1e"
+      "bytes": 4343,
+      "sha256": "07780c59f500c35aa39f897d79cc19411dc4737e24ea29a538b9912efb14a7e6"
     },
     {
       "path": "소방설비산업기사 전기편 실기 기출 문제 및 정답 정리.md",

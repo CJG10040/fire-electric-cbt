@@ -1,4 +1,36 @@
 
+/* ===== 현행 기준 보충 (원문과 시각적으로 분리) ===== */
+.sa-original-label{font-size:.76rem;font-weight:800;color:#637489;margin:9px 0 4px}
+.sa-law-box,.sa-law-status,.sa-law-overview{margin:14px 0;padding:12px;border:1px solid #a9c7e9;border-left:4px solid #285a94;border-radius:8px;background:#f4f8fd;color:#24394f;font-size:.82rem;line-height:1.6;overflow-wrap:anywhere}
+.sa-law-head{font-weight:800;color:#214f84;margin-bottom:5px}
+.sa-law-scope,.sa-law-foot{font-size:.73rem;color:#53677c;margin:5px 0}
+.sa-law-note{background:#fff;border:1px solid #c4d7ec;border-radius:7px;margin:9px 0}
+.sa-law-note>summary{padding:8px;cursor:pointer;font-weight:700}
+.sa-law-note.amendment,.sa-law-note.correction{border-color:#dda556}
+.sa-law-note.pending{border-color:#c29b47}
+.sa-law-tag{font-size:.7rem;background:#e7eef7;border-radius:4px;padding:2px 5px;display:inline-block}
+.sa-law-note.amendment .sa-law-tag,.sa-law-note.correction .sa-law-tag{background:#fff0d5;color:#885309}
+.sa-law-content{padding:0 10px 10px}
+.sa-law-content ul{padding-left:19px;margin:5px 0}
+.sa-law-content li{margin:5px 0}
+.sa-law-date{font-size:.75rem;font-weight:700;color:#7a500b}
+.sa-law-caveat,.sa-law-memo-alert{font-size:.77rem;padding:8px;background:#fff5df;border-radius:5px;color:#765419;line-height:1.6}
+.sa-law-refs>summary,.sa-law-related>summary{cursor:pointer;color:#285a94;font-weight:700;padding:6px 0;font-size:.79rem}
+.sa-law-refs{font-size:.75rem}
+.sa-law-refs a{color:#205c9e;text-decoration:underline}
+.sa-law-refs blockquote{margin:5px 0;padding:5px 8px;border-left:3px solid #bccbe0;background:#f6f8fb;color:#526478}
+.sa-law-status{background:#fafbfc;border-color:#cbd3dc;border-left-color:#8795a5;font-size:.76rem}
+.sa-law-status>summary{cursor:pointer;display:list-item}
+.sa-law-status .sa-law-head{display:inline;margin-right:8px}
+.sa-law-status p{margin:7px 0 0}
+.sa-law-overview p{margin:7px 0}
+.sa-law-pending-list{margin-top:8px;font-size:.77rem}
+.sa-law-pending-list summary{cursor:pointer}
+.sa-law-pending-list ul{max-height:230px;overflow:auto;padding-left:20px}
+.sa-law-pending-list button{border:0;background:transparent;text-align:left;color:#285a94;text-decoration:underline;font:inherit;padding:4px;cursor:pointer}
+.sa-law-related{margin-top:8px}
+.sa-cmp.hide .sa-law-related{display:none}
+
 /* ===== 단답·서술 모드 (sa-*) ===== */
 .sa-note{font-size:.8rem;color:#6b7a86;line-height:1.55;margin:-4px 0 14px}
 .sa-seg{display:flex;gap:8px;margin:2px 0 14px;flex-wrap:wrap}
