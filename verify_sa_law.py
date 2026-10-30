@@ -28,7 +28,8 @@ assert all(set(n['ks']) <= set(law['review']) for n in law['notes'])
 assert law['asOf']=='2026-10-25'
 raw=json.dumps([(o['id'],o['qh'],o['ah']) for o in bank['occ']],ensure_ascii=False,separators=(',',':'))
 assert hashlib.sha256(raw.encode()).hexdigest()==law['sourceAnswerSHA256']
-assert not re.search(r'<script[^>]+src=|\bfetch\s*\(',html,re.I)
+offline_html=re.sub(r'\n/\*CLOUD_SYNC_START\*/.*?/\*CLOUD_SYNC_END\*/\n','',html,flags=re.S)
+assert not re.search(r'<script[^>]+src=|\bfetch\s*\(',offline_html,re.I)
 assert html.count('</script>')==html.count('</body>')==html.count('</html>')==1
 assert all(n['change_on'] for n in law['notes'] if n['status']=='amendment')
 
@@ -40,6 +41,7 @@ else:
 assert block(baseline,'SA_DATA')==bank, 'historical questions/answers/IDs/clusters changed'
 assert block(baseline,'SA_MEMO')==memo, 'historical memorization data changed'
 def without_sa(t):
+    t=re.sub(r'\n/\*CLOUD_SYNC_START\*/.*?/\*CLOUD_SYNC_END\*/\n','',t,flags=re.S)
     for a,b in [('/*SA_CSS_START*/','/*SA_CSS_END*/'),('<!--SA_SCREENS_START-->','<!--SA_SCREENS_END-->'),('/*SA_JS_START*/','/*SA_JS_END*/')]:
         t=re.sub(re.escape(a)+r'.*?'+re.escape(b),a+b,t,flags=re.S)
     return t

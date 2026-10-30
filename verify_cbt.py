@@ -14,7 +14,8 @@ script_tags = re.findall(r"<script\b([^>]*)>([\s\S]*?)</script>", html, re.I)
 assert len(script_tags) == 1, f"expected one inline app script, found {len(script_tags)}"
 assert not re.search(r"\bsrc\s*=", script_tags[0][0], re.I), "external script dependency found"
 assert not re.search(r"<link\b[^>]*\brel=[\"']stylesheet", html, re.I), "stylesheet dependency found"
-assert not re.search(r"\bfetch\s*\(", html), "fetch dependency found"
+offline_html = re.sub(r'\n/\*CLOUD_SYNC_START\*/.*?/\*CLOUD_SYNC_END\*/\n', '', html, flags=re.S)
+assert not re.search(r"\bfetch\s*\(", offline_html), "offline core fetch dependency found"
 assert not re.search(r"https?://[^\"'\s)]*\.(js|css)\b", html), "remote js/css reference found"
 assert "external_ai_drafts.js" not in html and "CBT_EXTERNAL_AI_DRAFTS" not in html, "workbook drafts leaked in"
 with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".js", delete=False, dir=".") as tmp:
@@ -64,7 +65,9 @@ for token in ('id="exam-time-limit"', 'id="quiz-timer-wrap"', "function startQui
     assert token in html, token
 
 # 4. progress data untouched
-assert (root / "cbt_data.json").read_bytes() == Path("extracted/orig_cbt_data.json").read_bytes(), "cbt_data.json changed"
+private_baseline=Path('extracted/orig_cbt_data.json')
+expected_progress=(private_baseline.read_bytes() if private_baseline.exists() else subprocess.check_output(['git','show','f70eee508e9f53d689e76e37c9b1e4e7fb0cb289:cbt_v2/cbt_data.json']))
+assert (root / 'cbt_data.json').read_bytes()==expected_progress, 'progress fixture changed'
 
 if EXPECT_SA:
     import verify_sa

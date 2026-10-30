@@ -1,6 +1,6 @@
 {
-  "release_date": "2026-10-25",
-  "application_sha256": "cd93f91699b025ea42fb638a5a0b32aec98751b9d2b587223ae0327f22f4d1e7",
+  "release_date": "2026-10-30",
+  "application_sha256": "f8efb2a668042405717f4784bbbb82cf8106907dd169adba300dedc414d4bfbe",
   "questions": 493,
   "explanations": 379,
   "images": 986,
@@ -32,6 +32,12 @@
     "mnemonic": 22,
     "practice": 8
   },
+  "cloud_sync": {
+    "opt_in": true,
+    "auth": "id-and-6-digit-pin",
+    "conflict_control": "server-version-CAS",
+    "offline_local_storage": true
+  },
   "private_progress_included": false,
   "files": [
     {
@@ -51,8 +57,13 @@
     },
     {
       "path": "README.md",
-      "bytes": 10001,
-      "sha256": "2b283fadc6a593161f7e1c6d762c07711a28c6cb39dd08025b2b72d2e1afda02"
+      "bytes": 12553,
+      "sha256": "97658b3a7daad3eff862f4fdb71c75149bd120e916f43d7fed2e1bf0f6707aca"
+    },
+    {
+      "path": "build_cloud.py",
+      "bytes": 483,
+      "sha256": "72913b71c66dd186147cf688a3d0c3adafe7dc2522a9c837e8288c62641e52d8"
     },
     {
       "path": "build_sa.py",
@@ -81,8 +92,8 @@
     },
     {
       "path": "cbt_v2/cbt.html",
-      "bytes": 1506021,
-      "sha256": "cd93f91699b025ea42fb638a5a0b32aec98751b9d2b587223ae0327f22f4d1e7"
+      "bytes": 1524810,
+      "sha256": "f8efb2a668042405717f4784bbbb82cf8106907dd169adba300dedc414d4bfbe"
     },
     {
       "path": "cbt_v2/cbt_data.json",
@@ -5020,6 +5031,11 @@
       "sha256": "8c7ee9177d0b3c47b626b3ee5dc5331d68d29574b78147b54cbe025558c6214a"
     },
     {
+      "path": "cloud_sync.js",
+      "bytes": 18747,
+      "sha256": "36f77fdbcbfd8e7937e6a3d5470551a0f50f467c731ed94d0b0d2de6897a8220"
+    },
+    {
       "path": "downloads/index.html",
       "bytes": 1699,
       "sha256": "70939868b030a6664dd329b63cbe24565f143692d0b30d2bf52e56e9738a5d63"
@@ -5035,9 +5051,14 @@
       "sha256": "ec3f35682ba45ed51f15670e9f9fc7ecd707dee249ca6f9a4d28205cc9c1328e"
     },
     {
+      "path": "e2e_cloud.js",
+      "bytes": 5439,
+      "sha256": "a72eecbb3bdb93056ccd8287f4d3b5539b5e42344397de5ba0ee7e02141f1c70"
+    },
+    {
       "path": "e2e_jsdom.js",
-      "bytes": 12508,
-      "sha256": "9d14604957a998f62385fd406d1e992cd4611b5c96ad0ebabab845b3218833b2"
+      "bytes": 12594,
+      "sha256": "aef04e1b5d981e167f249ca33c346e8dd814bf5d4241349ed4de6a3e63d514d7"
     },
     {
       "path": "e2e_sa_law.js",
@@ -5155,6 +5176,21 @@
       "sha256": "9fca6cb4808eab0c93021128d8e47c95ace162e1babef049467df5cc04f8a544"
     },
     {
+      "path": "server/README.md",
+      "bytes": 2183,
+      "sha256": "78c45a38c65e9a4f391623fce35b57d6057f6d58420f428b2830b21cd456e418"
+    },
+    {
+      "path": "server/test_worker.mjs",
+      "bytes": 3845,
+      "sha256": "da18fe10cbd0d6273850efd59dceb0b3b74149bb41664541b4008aea59d26142"
+    },
+    {
+      "path": "server/worker.mjs",
+      "bytes": 7047,
+      "sha256": "97f6fe504c6fdf66696d1d773a60f533e5ae66e22a740e89cde5883fa3c1ec1e"
+    },
+    {
       "path": "smoke_sa.js",
       "bytes": 21669,
       "sha256": "a46e4ace4c0e86491e7c5383dfdfac7ad6946ece62ddaec431ba223c6bcef5ac"
@@ -5201,13 +5237,18 @@
     },
     {
       "path": "verify_cbt.py",
-      "bytes": 3669,
-      "sha256": "87b4b0221819a9d433173ae6bcf6c1b3d7896f15ebbe9bdb4016e5ccc11ba26c"
+      "bytes": 3999,
+      "sha256": "d9c15ce21cee97c723c2095c49240cea4d93859df83eb3a96079f1b63af945c6"
+    },
+    {
+      "path": "verify_cloud.py",
+      "bytes": 1175,
+      "sha256": "df13d2be5389ec7a32fa52bdccc23ff139f3346d3c31c6b3bb90d2230cb9696b"
     },
     {
       "path": "verify_public_release.py",
-      "bytes": 4420,
-      "sha256": "3e0939ef07c91b7bf913919e8a91ad86d0f74ea8619d589a0a3fe50aa8ae171a"
+      "bytes": 4643,
+      "sha256": "38b54802d2528342fde486e18e66507aaa40c411ab937f5256d4174e0e0885f8"
     },
     {
       "path": "verify_sa.py",
@@ -5216,8 +5257,8 @@
     },
     {
       "path": "verify_sa_law.py",
-      "bytes": 4016,
-      "sha256": "c853e3fccedb2c3ac62666bae130efbf8347e57de4ebf3f2f84eb39431d729ec"
+      "bytes": 4200,
+      "sha256": "3d301e726c27bd719a334656f15c638a21c509f437a4e827e2ca4c1ca28b7faa"
     },
     {
       "path": "verify_sa_pdf.py",

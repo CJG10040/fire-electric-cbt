@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {randomBytes,createHmac,pbkdf2Sync} from 'node:crypto';
+import worker from './worker.mjs';
+const sqlite=new DatabaseSync(':memory:');
+sqlite.exec('CREATE TABLE users(username TEXT PRIMARY KEY,salt TEXT,passhash TEXT,created_at INTEGER);CREATE TABLE sessions(token_hash TEXT PRIMARY KEY,username TEXT,expires_at INTEGER);CREATE TABLE snapshots(username TEXT PRIMARY KEY,version INTEGER,data TEXT,updated_at TEXT);CREATE TABLE login_limits(key TEXT PRIMARY KEY,hits INTEGER,expires_at INTEGER);');
+const DB={prepare(sql){return {params:[],bind(...p){this.params=p;return this;},async first(){return sqlite.prepare(sql).get(...this.params)||null;},async run(){return sqlite.prepare(sql).run(...this.params);}};},async batch(items){sqlite.exec('BEGIN');try{const out=[];for(const i of items)out.push(await i.run());sqlite.exec('COMMIT');return out;}catch(e){sqlite.exec('ROLLBACK');throw e;}}};
+const env={DB,AUTH_PEPPER:randomBytes(32).toString('hex')};
+function seed(name){const salt=randomBytes(16),pin='012345',pre=createHmac('sha256',env.AUTH_PEPPER).update(pin).digest(),hash=pbkdf2Sync(pre,salt,100000,32,'sha256').toString('base64url');sqlite.prepare('INSERT INTO users VALUES(?,?,?,0)').run(name,salt.toString('base64url'),hash);sqlite.prepare('INSERT INTO snapshots VALUES(?,0,NULL,NULL)').run(name);}
+seed('tester');seed('other');
+async function req(path,method='GET',body,token,origin='https://cjg10040.github.io'){const r=await worker.fetch(new Request('https://test.invalid'+path,{method,headers:{Origin:origin,...(body!==undefined?{'Content-Type':'application/json'}:{}),...(token?{Authorization:'Bearer '+token}:{})},...(body!==undefined?{body:JSON.stringify(body)}:{})}),env);return {status:r.status,body:r.status===204?null:await r.json(),headers:r.headers};}
+assert.equal((await req('/health')).status,200);
+assert.equal((await req('/health','GET',undefined,null,'https://evil.invalid')).status,403);
+assert.equal((await req('/state')).status,401);
+assert.equal((await req('/register','POST',{})).status,404);
+assert.equal((await req('/login','POST',{username:'tester',pin:123456})).status,400);
+assert.equal((await req('/login','POST',{username:'tester',pin:'999999'})).status,401);
+const a=await req('/login','POST',{username:'tester',pin:'012345'}),b=await req('/login','POST',{username:'tester',pin:'012345',remember:true}),c=await req('/login','POST',{username:'other',pin:'012345'});
+assert.equal(a.status,200);assert.equal(b.status,200);assert.equal(c.status,200);
+assert.equal(a.body.token.length,43);assert.ok(b.body.expiresAt-a.body.expiresAt>29*86400);
+assert.equal((await req('/state','GET',undefined,a.body.token)).body.data,null);
+const data={_version:3,wrong:{q:1},solved:['q'],history:[],myNotes:{hello:'test'},sa:{wrong:{},solved:[],history:[]}};
+let r=await req('/state','PUT',{baseVersion:0,data,username:'other'},a.body.token);assert.equal(r.status,200);assert.equal(r.body.version,1);
+assert.deepEqual((await req('/state','GET',undefined,b.body.token)).body.data,data);
+assert.equal((await req('/state','GET',undefined,c.body.token)).body.data,null);
+assert.equal((await req('/state','PUT',{baseVersion:0,data},b.body.token)).status,409);
+assert.equal((await req('/state','PUT',{baseVersion:1,data:{}},a.body.token)).status,400);
+assert.equal((await req('/logout','POST',{},a.body.token)).status,200);
+assert.equal((await req('/state','GET',undefined,a.body.token)).status,401);
+for(let i=0;i<4;i++)await req('/login','POST',{username:'tester',pin:'999999'});
+assert.equal((await req('/login','POST',{username:'tester',pin:'012345'})).status,429);
+console.log('PASS Worker SQLite/WebCrypto: PIN leading zero, origin, no signup, sessions/expiry, isolation, CAS409, invalid body, logout401, rate limit');
+sqlite.close();

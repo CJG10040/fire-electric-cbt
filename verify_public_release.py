@@ -30,7 +30,7 @@ for k in ('wrong', 'solved', 'history'):
     assert not progress['sa'][k], 'public SA template contains records: ' + k
 
 html = Path('cbt_v2/cbt.html').read_bytes()
-assert hashlib.sha256(html).hexdigest() == 'cd93f91699b025ea42fb638a5a0b32aec98751b9d2b587223ae0327f22f4d1e7', 'unexpected application version'
+assert hashlib.sha256(html).hexdigest() == 'f8efb2a668042405717f4784bbbb82cf8106907dd169adba300dedc414d4bfbe', 'unexpected application version'
 text = html.decode()
 bank = json.loads(re.search(r'const DB\s*=\s*(\[\s*\{.*?\}\s*\]);', text, re.S).group(1))
 assert len(bank) == 493
@@ -41,7 +41,7 @@ assert len([p for p in paths if p.startswith('downloads/') and p.endswith('.pdf'
 assert Path('index.html').is_file() and Path('.nojekyll').is_file()
 
 # Values are checked in memory and never printed or written into the repository.
-secrets = [v.encode() for k in ('GITHUB_TOKEN', 'VWORLD_API_KEY') if (v := os.environ.get(k)) and len(v) >= 12]
+secrets = [v.encode() for k in ('GITHUB_TOKEN', 'VWORLD_API_KEY', 'CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_ACCOUNT_ID', 'CBT_INITIAL_CREDENTIALS') if (v := os.environ.get(k)) and len(v) >= 12]
 pat = re.compile(rb'(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|-----BEGIN (?:RSA |OPENSSH )?PRIVATE KEY-----)')
 records = []
 for name in paths:
@@ -55,13 +55,14 @@ updated_keys={k for n in law['notes'] if n['status'] in {'amendment','correction
 assert law['asOf']=='2026-10-25' and len(updated_keys)==54 and law['counts']['pending']==14
 assert len(law['tables'])==1 and len(law['tables']['height']['links'])==3
 assert law['tables']['height']['src'].startswith('data:image/gif;base64,')
-manifest = {'release_date': '2026-10-25', 'application_sha256': hashlib.sha256(html).hexdigest(),
+manifest = {'release_date': '2026-10-30', 'application_sha256': hashlib.sha256(html).hexdigest(),
             'questions': 493, 'explanations': 379, 'images': 986, 'sa_occurrences': 447,
             'sa_clusters': 307, 'mnemonic_cards': 145, 'comparison_sets': 14,
             'current_law': {'as_of': law['asOf'], 'updated_clusters': len(updated_keys), 'notes': len(law['notes']),
                             'sources': len(law['sources']), 'pending': law['counts']['pending'], 'status_counts': law['counts']},
             'law_tables': {'embedded_images': len(law['tables']), 'linked_clusters': 3, 'offline': True},
             'pdf_pages': {'mnemonic': 22, 'practice': 8},
+            'cloud_sync': {'opt_in': True, 'auth': 'id-and-6-digit-pin', 'conflict_control': 'server-version-CAS', 'offline_local_storage': True},
             'private_progress_included': False, 'files': records}
 mp = Path('release-manifest.json')
 if '--write-manifest' in sys.argv:

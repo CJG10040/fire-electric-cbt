@@ -28,7 +28,8 @@ const tab = (d, name) => click($(d, `.nav-tab[data-screen="${name}"]`));
 
 let dom = boot();
 assert.deepStrictEqual(errors, [], 'script errors at load:\n' + errors.join('\n'));
-assert.strictEqual($$(dom, '.nav-tab').length, 9);
+assert.strictEqual($$(dom, '.nav-tab[data-screen]').length, 9);
+assert.ok($(dom, '#cloud-launch'), 'optional cloud settings available');
 assert.ok($$(dom, '#home-cat-chart .cat-row').length > 5, 'home category chart rendered (INIT ran)');
 assert.deepStrictEqual(active(dom), ['screen-home']);
 
