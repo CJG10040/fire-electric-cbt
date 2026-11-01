@@ -113,20 +113,37 @@ async function cloudChoose(which){
   }catch(e){if(epoch!==CLOUD.epoch)return;if(e.status===409){try{const r=await cloudRequest('/state');if(epoch===CLOUD.epoch)cloudConflict(r);}catch{cloudSetStatus('다른 기기가 다시 저장했습니다 · 기록을 다시 선택해 주세요');}}else{cloudSetStatus('기록 변경 실패 · 현재 기록은 유지됩니다. 파일 백업 후 다시 시도하세요');}}
   finally{if(epoch===CLOUD.epoch){CLOUD.busy=false;cloudSetStatus(CLOUD.status);}}
 }
-async function cloudLogin(){
+function cloudAuthMode(register){
+  if(CLOUD.busy||CLOUD.auth)return;
+  CLOUD.registerMode=!!register;
+  document.getElementById('cloud-confirm-label').hidden=!register;
+  document.getElementById('cloud-pin-confirm').required=!!register;
+  document.getElementById('cloud-pin').autocomplete=register?'new-password':'current-password';
+  document.getElementById('cloud-submit').textContent=register?'등록하고 로그인':'로그인';
+  document.getElementById('cloud-register-help').hidden=!register;
+  document.getElementById('cloud-pin').value='';document.getElementById('cloud-pin-confirm').value='';
+  cloudSetStatus(register?'새 아이디와 숫자 6자리 PIN을 직접 등록하세요':'기존 아이디와 숫자 6자리 PIN으로 로그인하세요');
+}
+async function cloudLogin(register=CLOUD.registerMode===true){
   if(CLOUD.busy)return;
   if(location.protocol==='file:'){cloudSetStatus('클라우드 동기화는 GitHub 웹사이트에서 이용해 주세요. 파일 학습·저장은 그대로 가능합니다.');return;}
   const name=document.getElementById('cloud-user').value.trim().toLowerCase(),pin=document.getElementById('cloud-pin').value,remember=document.getElementById('cloud-remember').checked;
-  document.getElementById('cloud-pin').value='';
-  if(!/^[a-z0-9_-]{3,32}$/.test(name)||!/^\d{6}$/.test(pin)){cloudSetStatus('아이디와 숫자 6자리 PIN을 확인해 주세요');return;}
-  CLOUD.busy=true;cloudSetStatus('로그인 중…');
+  const confirmed=document.getElementById('cloud-pin-confirm').value;
+  document.getElementById('cloud-pin').value='';document.getElementById('cloud-pin-confirm').value='';
+  if(!/^[a-z0-9_-]{3,32}$/.test(name)||!/^\d{6}$/.test(pin)){cloudSetStatus('아이디는 영문·숫자·_·- 3~32자, PIN은 숫자 6자리로 입력하세요');return;}
+  if(register&&pin!==confirmed){cloudSetStatus('PIN과 PIN 확인이 다릅니다. 두 칸을 다시 입력해 주세요');return;}
+  CLOUD.busy=true;let registered=false;cloudSetStatus(register?'계정 등록 중…':'로그인 중…');
   try{
+    if(register){await cloudRequest('/register','POST',{username:name,pin},null);registered=true;CLOUD.busy=false;cloudAuthMode(false);CLOUD.busy=true;}
     const r=await cloudRequest('/login','POST',{username:name,pin,remember},null);
     CLOUD.epoch++;CLOUD.auth={token:r.token,username:r.username,expiresAt:r.expiresAt};CLOUD.paused=false;CLOUD.conflict=null;
     sessionStorage.removeItem(CLOUD_KEYS.auth);localStorage.removeItem(CLOUD_KEYS.auth);
     (remember?localStorage:sessionStorage).setItem(CLOUD_KEYS.auth,JSON.stringify(CLOUD.auth));
     cloudStartPoll();cloudMeta();cloudSaveMeta();cloudSetStatus('로그인 완료 · 기록 확인 중');
-  }catch(e){cloudSetStatus(e.status===401?'아이디 또는 PIN이 맞지 않습니다':e.status===429?'로그인 시도 제한 · 15분 후 다시 시도하세요':'로그인 연결 실패 · 기기 기록은 유지됩니다');}
+  }catch(e){
+    const message=registered?'계정 등록은 완료됐습니다. 잠시 후 기존 로그인에서 다시 로그인해 주세요':e.status===409?'이미 사용 중인 아이디입니다. 기존 로그인으로 전환하거나 다른 아이디로 등록하세요':e.status===401?'아이디 또는 PIN이 맞지 않습니다. 새 계정이 필요하면 직접 등록을 선택하세요':e.status===429?(register?'등록 시도 제한 · 잠시 후 다시 시도하세요':'로그인 시도 제한 · 15분 후 다시 시도하세요'):e.message==='registration_full'?'계정 등록 한도에 도달했습니다. 기존 기록은 유지됩니다':e.status===403?'이 웹사이트 주소에서는 접속할 수 없습니다. 아래 공식 웹사이트 링크로 열어주세요':'서버 연결에 실패했습니다. 인터넷 연결과 공식 웹사이트 주소를 확인해 주세요';
+    cloudSetStatus(message+' · 기기 기록은 유지됩니다');
+  }
   finally{CLOUD.busy=false;cloudSetStatus(CLOUD.status);}
   if(CLOUD.auth)await cloudSync();
 }
@@ -158,7 +175,7 @@ async function cloudRestoreBackup(){
   if(!document.head||!document.querySelector('.nav-tabs'))return; // Offline core still works in minimal/embedded hosts.
   const style=document.createElement('style');style.textContent='#cloud-dialog{margin:auto;width:min(94vw,560px);max-height:90vh;overflow:auto;border:1px solid #b8c6d5;border-radius:12px;padding:20px;color:#20384d;background:white}#cloud-dialog::backdrop{background:#0008}#cloud-dialog header{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px}#cloud-dialog p{font-size:.85rem;line-height:1.6;margin:10px 0}#cloud-dialog label{display:block;margin:10px 0}#cloud-dialog input:not([type=checkbox]){width:100%;padding:10px;border:1px solid #b8c6d5;border-radius:6px}#cloud-dialog button{margin:4px 3px;padding:8px 12px;border:1px solid #9bb0c5;border-radius:6px;cursor:pointer}#cloud-dialog [hidden]{display:none!important}#cloud-status{padding:10px;background:#edf4fa;border-radius:6px}#cloud-conflict{border:2px solid #e9b352;padding:10px;margin:10px 0}.cloud-hint{color:#5d6e80}';document.head.appendChild(style);
   const d=document.createElement('dialog');d.id='cloud-dialog';d.setAttribute('aria-labelledby','cloud-title');
-  d.innerHTML='<header><b id="cloud-title">☁️ 학습기록 동기화</b><button type="button" onclick="cloudClose()">닫기 ✕</button></header><p id="cloud-status">로그인하지 않음</p><form id="cloud-login-form" onsubmit="event.preventDefault();cloudLogin()"><label>아이디<input id="cloud-user" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="32" required></label><label>숫자 6자리 PIN<input id="cloud-pin" type="password" inputmode="numeric" autocomplete="current-password" pattern="[0-9]{6}" minlength="6" maxlength="6" required></label><label><input id="cloud-remember" type="checkbox"> 이 기기에서 로그인 유지(최대 30일)</label><button data-network type="submit">로그인</button><p class="cloud-hint">공용 기기에서는 로그인 유지를 선택하지 마세요. PIN은 저장하지 않으며, 로그인 유지 시 접속용 토큰이 이 브라우저에 보관됩니다.</p></form><section id="cloud-controls" hidden><p>연결 계정: <b id="cloud-account"></b></p><button data-network type="button" onclick="CLOUD.paused=!!CLOUD.conflict;cloudSync()">지금 동기화</button><button type="button" onclick="cloudLogout()">로그아웃</button></section><section id="cloud-conflict" hidden><b>기록을 자동으로 덮어쓰지 않았습니다</b><p>어느 기록을 사용할지 선택하세요. 선택 전 두 기록을 이 기기에 백업합니다. 자동 병합은 하지 않습니다. 현재 풀이 중이면 먼저 종료해 주세요.</p><button data-network type="button" onclick="cloudChoose(\'local\')">이 기기 기록으로 클라우드 갱신</button><button data-network type="button" id="cloud-use-remote" onclick="cloudChoose(\'remote\')">클라우드 기록 불러오기</button></section><hr><button type="button" onclick="cloudDownloadBackup()">JSON 파일 백업</button><button type="button" onclick="cloudRestoreBackup()">교체 전 기기 백업 복원</button><p class="cloud-hint">연결하지 않아도 기존 기기 저장·파일 백업은 그대로 작동합니다. 인터넷이 끊기면 기기에 저장하고 재연결 후 전송합니다. 다른 기기 기록을 불러오면 이전 되돌리기 이력은 초기화됩니다.</p>';
+  d.innerHTML='<header><b id="cloud-title">☁️ 학습기록 동기화</b><button type="button" onclick="cloudClose()">닫기 ✕</button></header><p id="cloud-status">로그인하지 않음</p><form id="cloud-login-form" onsubmit="event.preventDefault();cloudLogin()"><div><button data-network type="button" onclick="cloudAuthMode(false)">기존 로그인</button><button data-network id="cloud-register-mode" type="button" onclick="cloudAuthMode(true)">새 아이디 직접 등록</button></div><p class="cloud-hint">아이디: 영문·숫자·_·- 3~32자 / 비밀번호: 숫자 6자리 PIN</p><label>아이디<input id="cloud-user" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="32" required></label><label>숫자 6자리 PIN<input id="cloud-pin" type="password" inputmode="numeric" autocomplete="current-password" pattern="[0-9]{6}" minlength="6" maxlength="6" required></label><label id="cloud-confirm-label" hidden>PIN 확인<input id="cloud-pin-confirm" type="password" inputmode="numeric" autocomplete="new-password" pattern="[0-9]{6}" minlength="6" maxlength="6"></label><p id="cloud-register-help" class="cloud-hint" hidden>직접 등록하면 새 학습계정이 만들어집니다. 이미 있는 계정의 PIN이나 기록은 바뀌지 않습니다. 새 계정으로 기존 서버 기록이 자동 이동하지는 않으며, 이 기기의 기록은 연결 후 선택해서 올릴 수 있습니다. 복구 기능은 없으니 아이디와 PIN을 기억해 주세요.</p><label><input id="cloud-remember" type="checkbox"> 이 기기에서 로그인 유지(최대 30일)</label><button data-network id="cloud-submit" type="submit">로그인</button><p class="cloud-hint">공용 기기에서는 로그인 유지를 선택하지 마세요. PIN은 저장하지 않으며, 로그인 유지 시 접속용 토큰이 이 브라우저에 보관됩니다.</p></form><section id="cloud-controls" hidden><p>연결 계정: <b id="cloud-account"></b></p><button data-network type="button" onclick="CLOUD.paused=!!CLOUD.conflict;cloudSync()">지금 동기화</button><button type="button" onclick="cloudLogout()">로그아웃</button></section><section id="cloud-conflict" hidden><b>기록을 자동으로 덮어쓰지 않았습니다</b><p>어느 기록을 사용할지 선택하세요. 선택 전 두 기록을 이 기기에 백업합니다. 자동 병합은 하지 않습니다. 현재 풀이 중이면 먼저 종료해 주세요.</p><button data-network type="button" onclick="cloudChoose(\'local\')">이 기기 기록으로 클라우드 갱신</button><button data-network type="button" id="cloud-use-remote" onclick="cloudChoose(\'remote\')">클라우드 기록 불러오기</button></section><hr><p><a href="https://cjg10040.github.io/fire-electric-cbt/cbt_v2/cbt.html" target="_blank" rel="noopener noreferrer">공식 웹사이트에서 로그인·등록하기 ↗</a></p><button type="button" onclick="cloudDownloadBackup()">JSON 파일 백업</button><button type="button" onclick="cloudRestoreBackup()">교체 전 기기 백업 복원</button><p class="cloud-hint">연결하지 않아도 기존 기기 저장·파일 백업은 그대로 작동합니다. 인터넷이 끊기면 기기에 저장하고 재연결 후 전송합니다. 다른 기기 기록을 불러오면 이전 되돌리기 이력은 초기화됩니다.</p>';
   document.body.appendChild(d);d.addEventListener('cancel',e=>{e.preventDefault();cloudClose();});
   const b=document.createElement('button');b.id='cloud-launch';b.type='button';b.className='nav-tab';b.textContent='☁️ 로그인';b.style.cssText='border:0;background:transparent';b.addEventListener('click',cloudOpen);document.querySelector('.nav-tabs').appendChild(b);
   for(const name of ['_persistToLS','_persistSA']){const old=window[name];window[name]=function(...args){const out=old.apply(this,args);try{cloudChanged();}catch{}return out;};}

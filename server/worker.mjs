@@ -1,4 +1,4 @@
-// Personal CBT sync API. No public signup, recovery, admin API or logging of credentials.
+// CBT sync API with rate-limited self-registration. No recovery/admin API or credential logging.
 const ORIGIN='https://cjg10040.github.io';
 const enc=new TextEncoder();
 const bytesTo64=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -21,7 +21,7 @@ async function jsonBody(req,max){
   let size=0,chunks=[];
   while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>max){await reader.cancel();throw {status:413,code:'too_large'};}chunks.push(value);}
   const out=new Uint8Array(size);let p=0;for(const c of chunks){out.set(c,p);p+=c.length;}
-  try{return JSON.parse(new TextDecoder().decode(out));}catch{throw {status:400,code:'invalid_json'};}
+  try{const data=JSON.parse(new TextDecoder().decode(out));if(!data||typeof data!=='object'||Array.isArray(data))throw new Error();return data;}catch{throw {status:400,code:'invalid_json'};}
 }
 function validData(d){
   const obj=x=>x&&typeof x==='object'&&!Array.isArray(x);
@@ -30,9 +30,9 @@ function validData(d){
   function walk(x,depth){if(++seen>100000||depth>20)return false;if(x&&typeof x==='object')for(const k of Object.keys(x)){if(['__proto__','prototype','constructor'].includes(k)||!walk(x[k],depth+1))return false;}return true;}
   return walk(d,0);
 }
-async function rate(db,key,now){
-  const row=await db.prepare('INSERT INTO login_limits (key,hits,expires_at) VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET hits=CASE WHEN expires_at<=? THEN 1 ELSE hits+1 END, expires_at=CASE WHEN expires_at<=? THEN ? ELSE expires_at END RETURNING hits').bind(key,now+900,now,now,now+900).first();
-  return row.hits<=5;
+async function rate(db,key,now,limit=5,seconds=900){
+  const row=await db.prepare('INSERT INTO login_limits (key,hits,expires_at) VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET hits=CASE WHEN expires_at<=? THEN 1 ELSE hits+1 END, expires_at=CASE WHEN expires_at<=? THEN ? ELSE expires_at END RETURNING hits').bind(key,now+seconds,now,now,now+seconds).first();
+  return row.hits<=limit;
 }
 export default {async fetch(req,env){
   const origin=req.headers.get('Origin')||'';
@@ -42,6 +42,29 @@ export default {async fetch(req,env){
     if(req.method==='OPTIONS')return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':ORIGIN,'Access-Control-Allow-Methods':'GET,POST,PUT,OPTIONS','Access-Control-Allow-Headers':'Authorization,Content-Type','Access-Control-Max-Age':'600','Vary':'Origin'}});
     const path=new URL(req.url).pathname, now=Math.floor(Date.now()/1000);
     if(path==='/health'&&req.method==='GET')return reply(200,{ok:true,service:'cbt-sync',version:1});
+    if(path==='/register'&&req.method==='POST'){
+      const b=await jsonBody(req,2048);
+      const username=typeof b.username==='string'?b.username.trim().toLowerCase():'';
+      if(!/^[a-z0-9_-]{3,32}$/.test(username)||typeof b.pin!=='string'||!/^\d{6}$/.test(b.pin))return reply(400,{error:'invalid_credentials'});
+      const ip=req.headers.get('CF-Connecting-IP')||'unknown';
+      const key=bytesTo64(await hmac(env.AUTH_PEPPER,'register-ip:'+ip));
+      if(!await rate(env.DB,key,now,5,3600))return reply(429,{error:'registration_limited',retryAfter:3600});
+      const existing=await env.DB.prepare('SELECT username FROM users WHERE username=?').bind(username).first();
+      if(existing)return reply(409,{error:'username_taken'});
+      const count=await env.DB.prepare('SELECT COUNT(*) AS n FROM users').first();
+      if(count.n>=100)return reply(503,{error:'registration_full'});
+      const globalKey=bytesTo64(await hmac(env.AUTH_PEPPER,'register-global'));
+      if(!await rate(env.DB,globalKey,now,20,86400))return reply(429,{error:'registration_limited',retryAfter:86400});
+      const salt=random(16),hash=await passwordHash(b.pin,salt,env.AUTH_PEPPER);
+      // D1 batch is transactional: a failed snapshot insert rolls back the new user.
+      // ON CONFLICT never changes an existing user's PIN or progress, even in a race.
+      const inserted=await env.DB.batch([
+        env.DB.prepare('INSERT INTO users (username,salt,passhash,created_at) SELECT ?,?,?,? WHERE (SELECT COUNT(*) FROM users)<100 ON CONFLICT(username) DO NOTHING RETURNING username').bind(username,salt,hash,now),
+        env.DB.prepare('INSERT INTO snapshots (username,version,data,updated_at) SELECT username,0,NULL,NULL FROM users WHERE username=? ON CONFLICT(username) DO NOTHING').bind(username)
+      ]);
+      if(!inserted[0]?.results?.length)return reply(409,{error:'username_taken_or_capacity'});
+      return reply(201,{ok:true,username});
+    }
     if(path==='/login'&&req.method==='POST'){
       const b=await jsonBody(req,2048);
       const username=typeof b.username==='string'?b.username.toLowerCase():'';

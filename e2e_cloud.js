@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('fs');
 const {JSDOM,VirtualConsole}=require('./_jsdom/node_modules/jsdom');
 const html=fs.readFileSync('cbt_v2/cbt.html','utf8');
-const server={version:0,data:null,tokens:new Set(),calls:0,offline:false,onPut:null};
+const server={version:0,data:null,tokens:new Set(),calls:0,offline:false,onPut:null,registered:new Set(['tester'])};
 const doms=[];const errors=[];
 function boot(ls={}){
  const vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(String(e)));
@@ -9,7 +9,8 @@ function boot(ls={}){
   for(const [k,v] of Object.entries(ls))w.localStorage.setItem(k,v);
   w.scrollTo=()=>{};w.confirm=()=>true;w.alert=()=>{};w.URL.createObjectURL=()=> 'blob:test';w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=()=>{};
   w.fetch=async(url,o)=>{server.calls++;if(server.offline)throw new Error('offline');const method=o.method||'GET',path=new URL(url).pathname,b=o.body?JSON.parse(o.body):null,t=(o.headers.Authorization||'').replace('Bearer ','');let status=200,data={};
-   if(path==='/login'){if(b.pin!=='012345'){status=401;}else{const token=String.fromCharCode(65+server.tokens.size).repeat(43);server.tokens.add(token);data={username:b.username,token,expiresAt:Math.floor(Date.now()/1000)+86400};}}
+   if(path==='/register'){if(server.registered.has(b.username)){status=409;}else{server.registered.add(b.username);status=201;data={ok:true,username:b.username};}}
+   else if(path==='/login'){if(b.pin!=='012345'){status=401;}else{const token=String.fromCharCode(65+server.tokens.size).repeat(43);server.tokens.add(token);data={username:b.username,token,expiresAt:Math.floor(Date.now()/1000)+86400};}}
    else if(!server.tokens.has(t))status=401;
    else if(path==='/logout'){server.tokens.delete(t);data={ok:true};}
    else if(method==='GET')data={version:server.version,data:server.data};
@@ -24,6 +25,12 @@ function stop(d){ev(d,'clearTimeout(CLOUD.timer)');}
 async function login(d){const w=d.window;w.document.getElementById('cloud-user').value='tester';w.document.getElementById('cloud-pin').value='012345';w.document.getElementById('cloud-remember').checked=true;await w.cloudLogin();stop(d);}
 function saved(d){return Object.fromEntries(Object.entries(d.window.localStorage));}
 (async()=>{
+ const reg=boot();reg.window.cloudAuthMode(true);
+ const form=reg.window.document;form.getElementById('cloud-user').value='self_test';form.getElementById('cloud-pin').value='012345';form.getElementById('cloud-pin-confirm').value='999999';
+ const before=server.calls;await reg.window.cloudLogin();assert.equal(server.calls,before,'PIN confirmation mismatch must not call server');
+ form.getElementById('cloud-pin').value='012345';form.getElementById('cloud-pin-confirm').value='012345';await reg.window.cloudLogin();stop(reg);assert.equal(ev(reg,'CLOUD.auth.username'),'self_test','signup auto-login');await reg.window.cloudLogout();
+ reg.window.cloudAuthMode(true);form.getElementById('cloud-pin').value='012345';form.getElementById('cloud-pin-confirm').value='012345';await reg.window.cloudLogin();assert.equal(ev(reg,'CLOUD.auth'),null);assert.ok(form.getElementById('cloud-status').textContent.includes('이미 사용'));
+ server.calls=0;
  const a=boot({'cbt_store_v2':JSON.stringify({wrong:{legacy:2},solved:['legacy'],history:[],myNotes:{legacy:'keep'}})});
  assert.equal(server.calls,0,'no network before opt-in');assert.ok(a.window.document.getElementById('cloud-launch'));
  await login(a);assert.equal(server.data,null);assert.equal(ev(a,'STORE.wrong.legacy'),2);assert.equal(ev(a,'CLOUD.paused'),true,'initial local progress requires choice');
@@ -39,5 +46,5 @@ function saved(d){return Object.fromEntries(Object.entries(d.window.localStorage
  let exported='';reload.window.Blob=class{constructor(parts){exported=parts.join('');}};reload.window.cloudDownloadBackup();const payload=JSON.parse(exported);assert.equal(payload._version,3);assert.equal(payload.sa.history.length,0);assert.equal('token' in payload,false);assert.equal(exported.includes(ev(reload,'CLOUD.auth.token')),false);assert.equal('CLOUD' in payload,false);
  const oldToken=ev(reload,'CLOUD.auth.token');server.tokens.delete(oldToken);await reload.window.cloudSync();stop(reload);assert.equal(ev(reload,'CLOUD.auth'),null);assert.equal(ev(reload,'CLOUD.busy'),false);assert.equal(ev(reload,'STORE.wrong.offline'),1);
  await login(reload);await reload.window.cloudLogout();assert.equal(ev(reload,'CLOUD.auth'),null);assert.equal(ev(reload,'STORE.wrong.offline'),1);
- assert.deepEqual(errors,[]);console.log('PASS cloud DOM: opt-in/no initial network; PIN; initial choice; 2 clients; conflict; backups; offline+reload; changes during save; session expiry; logout; export excludes tokens');
+ assert.deepEqual(errors,[]);console.log('PASS cloud DOM: signup/confirmation/duplicate/auto-login; opt-in/no initial network; PIN; initial choice; 2 clients; conflict; backups; offline+reload; changes during save; session expiry; logout; export excludes tokens');
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{for(const d of doms)d.window.close();});

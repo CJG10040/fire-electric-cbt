@@ -1,6 +1,6 @@
 {
-  "release_date": "2026-10-30",
-  "application_sha256": "f8efb2a668042405717f4784bbbb82cf8106907dd169adba300dedc414d4bfbe",
+  "release_date": "2026-11-01",
+  "application_sha256": "37cb22aefaf8acf1c4436bd77159b64251b3fa38137f9943e6fdd3e09634009f",
   "questions": 493,
   "explanations": 379,
   "images": 986,
@@ -35,6 +35,7 @@
   "cloud_sync": {
     "opt_in": true,
     "auth": "id-and-6-digit-pin",
+    "self_registration": true,
     "conflict_control": "server-version-CAS",
     "offline_local_storage": true
   },
@@ -57,8 +58,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 12553,
-      "sha256": "97658b3a7daad3eff862f4fdb71c75149bd120e916f43d7fed2e1bf0f6707aca"
+      "bytes": 13006,
+      "sha256": "350d3800c17295cc6fcea64fd22d501277c684fb2a02a9ac7aa698e370455a15"
     },
     {
       "path": "build_cloud.py",
@@ -92,8 +93,8 @@
     },
     {
       "path": "cbt_v2/cbt.html",
-      "bytes": 1524810,
-      "sha256": "f8efb2a668042405717f4784bbbb82cf8106907dd169adba300dedc414d4bfbe"
+      "bytes": 1527964,
+      "sha256": "37cb22aefaf8acf1c4436bd77159b64251b3fa38137f9943e6fdd3e09634009f"
     },
     {
       "path": "cbt_v2/cbt_data.json",
@@ -5032,8 +5033,8 @@
     },
     {
       "path": "cloud_sync.js",
-      "bytes": 18747,
-      "sha256": "36f77fdbcbfd8e7937e6a3d5470551a0f50f467c731ed94d0b0d2de6897a8220"
+      "bytes": 21901,
+      "sha256": "a239abcb926033d8bcfc1b6bc294ab5058f15575be5d77531ed2c590b0ba25b9"
     },
     {
       "path": "downloads/index.html",
@@ -5052,8 +5053,8 @@
     },
     {
       "path": "e2e_cloud.js",
-      "bytes": 5439,
-      "sha256": "a72eecbb3bdb93056ccd8287f4d3b5539b5e42344397de5ba0ee7e02141f1c70"
+      "bytes": 6623,
+      "sha256": "727ddec3e4c1b06401b8c3befb5d07220544cc9a1dab2854883e64e6e2eaede3"
     },
     {
       "path": "e2e_jsdom.js",
@@ -5177,18 +5178,18 @@
     },
     {
       "path": "server/README.md",
-      "bytes": 2183,
-      "sha256": "78c45a38c65e9a4f391623fce35b57d6057f6d58420f428b2830b21cd456e418"
+      "bytes": 2431,
+      "sha256": "92d631703bbb90f54947691176bb586387798644e08854077361865e0efc5a82"
     },
     {
       "path": "server/test_worker.mjs",
-      "bytes": 3845,
-      "sha256": "da18fe10cbd0d6273850efd59dceb0b3b74149bb41664541b4008aea59d26142"
+      "bytes": 4668,
+      "sha256": "1c70045fb9e79dd824fccaf8416c44506e3b15a22fa5ba4b39e5ccd512bf2ec0"
     },
     {
       "path": "server/worker.mjs",
-      "bytes": 7047,
-      "sha256": "97f6fe504c6fdf66696d1d773a60f533e5ae66e22a740e89cde5883fa3c1ec1e"
+      "bytes": 9120,
+      "sha256": "ac6a1f4179c93e0539b91100c6510183e05b0ce0898315d561b77284e79f4151"
     },
     {
       "path": "smoke_sa.js",
@@ -5247,8 +5248,8 @@
     },
     {
       "path": "verify_public_release.py",
-      "bytes": 4643,
-      "sha256": "38b54802d2528342fde486e18e66507aaa40c411ab937f5256d4174e0e0885f8"
+      "bytes": 4670,
+      "sha256": "0aacb4ef0999e00f965273887a6719b7fabe84cfe6eed1c24e0a2fbe89f8fbbc"
     },
     {
       "path": "verify_sa.py",
