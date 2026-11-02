@@ -30,7 +30,7 @@ for k in ('wrong', 'solved', 'history'):
     assert not progress['sa'][k], 'public SA template contains records: ' + k
 
 html = Path('cbt_v2/cbt.html').read_bytes()
-assert hashlib.sha256(html).hexdigest() == '37cb22aefaf8acf1c4436bd77159b64251b3fa38137f9943e6fdd3e09634009f', 'unexpected application version'
+assert hashlib.sha256(html).hexdigest() == '1a9f01df4a5cb8e3e5531c73d0e11e3c30da5fb013221e24b43dee74fd9abae2', 'unexpected application version'
 text = html.decode()
 bank = json.loads(re.search(r'const DB\s*=\s*(\[\s*\{.*?\}\s*\]);', text, re.S).group(1))
 assert len(bank) == 493
@@ -55,14 +55,14 @@ updated_keys={k for n in law['notes'] if n['status'] in {'amendment','correction
 assert law['asOf']=='2026-10-25' and len(updated_keys)==54 and law['counts']['pending']==14
 assert len(law['tables'])==1 and len(law['tables']['height']['links'])==3
 assert law['tables']['height']['src'].startswith('data:image/gif;base64,')
-manifest = {'release_date': '2026-11-01', 'application_sha256': hashlib.sha256(html).hexdigest(),
+manifest = {'release_date': '2026-11-02', 'application_sha256': hashlib.sha256(html).hexdigest(),
             'questions': 493, 'explanations': 379, 'images': 986, 'sa_occurrences': 447,
             'sa_clusters': 307, 'mnemonic_cards': 145, 'comparison_sets': 14,
             'current_law': {'as_of': law['asOf'], 'updated_clusters': len(updated_keys), 'notes': len(law['notes']),
                             'sources': len(law['sources']), 'pending': law['counts']['pending'], 'status_counts': law['counts']},
             'law_tables': {'embedded_images': len(law['tables']), 'linked_clusters': 3, 'offline': True},
             'pdf_pages': {'mnemonic': 22, 'practice': 8},
-            'cloud_sync': {'opt_in': True, 'auth': 'id-and-6-digit-pin', 'self_registration': True, 'conflict_control': 'server-version-CAS', 'offline_local_storage': True},
+            'cloud_sync': {'opt_in': True, 'auth': 'id-and-6-digit-pin', 'self_registration': True, 'background_polling': False, 'auto_save_after_edit': False, 'schedule': 'login-page-open-reconnect-and-manual', 'conflict_control': 'server-version-CAS', 'offline_local_storage': True},
             'private_progress_included': False, 'files': records}
 mp = Path('release-manifest.json')
 if '--write-manifest' in sys.argv:

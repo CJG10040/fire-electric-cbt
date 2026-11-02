@@ -1,6 +1,6 @@
 {
-  "release_date": "2026-11-01",
-  "application_sha256": "37cb22aefaf8acf1c4436bd77159b64251b3fa38137f9943e6fdd3e09634009f",
+  "release_date": "2026-11-02",
+  "application_sha256": "1a9f01df4a5cb8e3e5531c73d0e11e3c30da5fb013221e24b43dee74fd9abae2",
   "questions": 493,
   "explanations": 379,
   "images": 986,
@@ -36,6 +36,9 @@
     "opt_in": true,
     "auth": "id-and-6-digit-pin",
     "self_registration": true,
+    "background_polling": false,
+    "auto_save_after_edit": false,
+    "schedule": "login-page-open-reconnect-and-manual",
     "conflict_control": "server-version-CAS",
     "offline_local_storage": true
   },
@@ -58,8 +61,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 13006,
-      "sha256": "350d3800c17295cc6fcea64fd22d501277c684fb2a02a9ac7aa698e370455a15"
+      "bytes": 13659,
+      "sha256": "ce875ab2d0b8758f51203b1394079ccd23da149422af190cda3082635881ee30"
     },
     {
       "path": "build_cloud.py",
@@ -93,8 +96,8 @@
     },
     {
       "path": "cbt_v2/cbt.html",
-      "bytes": 1527964,
-      "sha256": "37cb22aefaf8acf1c4436bd77159b64251b3fa38137f9943e6fdd3e09634009f"
+      "bytes": 1528044,
+      "sha256": "1a9f01df4a5cb8e3e5531c73d0e11e3c30da5fb013221e24b43dee74fd9abae2"
     },
     {
       "path": "cbt_v2/cbt_data.json",
@@ -5033,8 +5036,8 @@
     },
     {
       "path": "cloud_sync.js",
-      "bytes": 21901,
-      "sha256": "a239abcb926033d8bcfc1b6bc294ab5058f15575be5d77531ed2c590b0ba25b9"
+      "bytes": 21981,
+      "sha256": "c20c816fb0dc36afd0239d5d6441f7c25eb8374ab7dc62a90a031841f4a5d262"
     },
     {
       "path": "downloads/index.html",
@@ -5053,8 +5056,8 @@
     },
     {
       "path": "e2e_cloud.js",
-      "bytes": 6623,
-      "sha256": "727ddec3e4c1b06401b8c3befb5d07220544cc9a1dab2854883e64e6e2eaede3"
+      "bytes": 9198,
+      "sha256": "00d4558bba58f517a37f99496b6b842d5b183d767f30623dc8952cf0ecc0b26f"
     },
     {
       "path": "e2e_jsdom.js",
@@ -5248,8 +5251,8 @@
     },
     {
       "path": "verify_public_release.py",
-      "bytes": 4670,
-      "sha256": "0aacb4ef0999e00f965273887a6719b7fabe84cfe6eed1c24e0a2fbe89f8fbbc"
+      "bytes": 4782,
+      "sha256": "8ebceecdd33b208863060e2f7bf2438cce92f9f1720d1a1c536b8266ff374b86"
     },
     {
       "path": "verify_sa.py",

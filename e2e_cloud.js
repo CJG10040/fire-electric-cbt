@@ -3,10 +3,17 @@ const {JSDOM,VirtualConsole}=require('./_jsdom/node_modules/jsdom');
 const html=fs.readFileSync('cbt_v2/cbt.html','utf8');
 const server={version:0,data:null,tokens:new Set(),calls:0,offline:false,onPut:null,registered:new Set(['tester'])};
 const doms=[];const errors=[];
-function boot(ls={}){
+function boot(ls={},manualClock=false){
  const vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(String(e)));
  const dom=new JSDOM(html,{url:'https://cjg10040.github.io/fire-electric-cbt/cbt_v2/cbt.html',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:vc,beforeParse(w){
   for(const [k,v] of Object.entries(ls))w.localStorage.setItem(k,v);
+  if(manualClock){
+   let now=0,id=0;const timers=new Map();
+   w.setTimeout=(fn,ms=0,...args)=>{const n=++id;timers.set(n,{at:now+ms,fn:()=>typeof fn==='function'?fn(...args):w.eval(fn)});return n;};
+   w.clearTimeout=n=>timers.delete(n);
+   w.setInterval=(fn,ms=0,...args)=>{const n=++id;timers.set(n,{at:now+ms,repeat:Math.max(1,ms),fn:()=>fn(...args)});return n;};w.clearInterval=w.clearTimeout;
+   w.__advance=async ms=>{const end=now+ms;let safety=0;while(true){const due=[...timers].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!due)break;if(++safety>1000)throw new Error('timer loop');const [n,t]=due;timers.delete(n);now=t.at;await t.fn();if(t.repeat)timers.set(n,{...t,at:now+t.repeat});}now=end;};
+  }
   w.scrollTo=()=>{};w.confirm=()=>true;w.alert=()=>{};w.URL.createObjectURL=()=> 'blob:test';w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=()=>{};
   w.fetch=async(url,o)=>{server.calls++;if(server.offline)throw new Error('offline');const method=o.method||'GET',path=new URL(url).pathname,b=o.body?JSON.parse(o.body):null,t=(o.headers.Authorization||'').replace('Bearer ','');let status=200,data={};
    if(path==='/register'){if(server.registered.has(b.username)){status=409;}else{server.registered.add(b.username);status=201;data={ok:true,username:b.username};}}
@@ -46,5 +53,14 @@ function saved(d){return Object.fromEntries(Object.entries(d.window.localStorage
  let exported='';reload.window.Blob=class{constructor(parts){exported=parts.join('');}};reload.window.cloudDownloadBackup();const payload=JSON.parse(exported);assert.equal(payload._version,3);assert.equal(payload.sa.history.length,0);assert.equal('token' in payload,false);assert.equal(exported.includes(ev(reload,'CLOUD.auth.token')),false);assert.equal('CLOUD' in payload,false);
  const oldToken=ev(reload,'CLOUD.auth.token');server.tokens.delete(oldToken);await reload.window.cloudSync();stop(reload);assert.equal(ev(reload,'CLOUD.auth'),null);assert.equal(ev(reload,'CLOUD.busy'),false);assert.equal(ev(reload,'STORE.wrong.offline'),1);
  await login(reload);await reload.window.cloudLogout();assert.equal(ev(reload,'CLOUD.auth'),null);assert.equal(ev(reload,'STORE.wrong.offline'),1);
- assert.deepEqual(errors,[]);console.log('PASS cloud DOM: signup/confirmation/duplicate/auto-login; opt-in/no initial network; PIN; initial choice; 2 clients; conflict; backups; offline+reload; changes during save; session expiry; logout; export excludes tokens');
+ const manual=boot({},true);await login(manual);const mw=manual.window;let calls=server.calls,version=server.version;
+ ev(manual,"saveMyNote('manual_test','수동 저장 확인용 한글 메모')");
+ mw.dispatchEvent(new mw.Event('focus'));mw.document.dispatchEvent(new mw.Event('visibilitychange'));await mw.__advance(65000);
+ assert.equal(server.calls,calls,'edit/2sec/30sec/focus/visibility must not contact cloud');assert.equal(server.version,version);
+ assert.ok(mw.localStorage.getItem('cbt_store_v2').includes('수동 저장 확인용 한글 메모'));assert.equal(ev(manual,'CLOUD.meta.pending'),true);
+ mw.saveDataFile();await mw.__advance(0);assert.equal(server.calls,calls+2,'explicit Save performs one GET/PUT');assert.equal(server.data.myNotes.manual_test,'수동 저장 확인용 한글 메모');
+ calls=server.calls;ev(manual,"addWrong('online_only')");mw.dispatchEvent(new mw.Event('online'));await mw.__advance(100);assert.equal(server.calls,calls+2);assert.equal(server.data.wrong.online_only,1);
+ server.offline=true;ev(manual,"addWrong('failed_manual')");await mw.cloudSync();calls=server.calls;await mw.__advance(180000);assert.equal(server.calls,calls,'failed save must not start background retries');assert.equal(ev(manual,'CLOUD.meta.pending'),true);server.offline=false;
+ const resumed=boot(saved(manual),true);calls=server.calls;await resumed.window.__advance(500);assert.equal(server.calls,calls+2,'one initial check on restored login');assert.equal(server.data.wrong.failed_manual,1);calls=server.calls;await resumed.window.__advance(65000);assert.equal(server.calls,calls,'no polling after initial login restore');
+ assert.deepEqual(errors,[]);console.log('PASS low-traffic policy: edits/65sec/focus/visibility make ZERO requests; explicit save and reconnect work; failed save has no retry; initial restored login checks once');console.log('PASS cloud DOM: signup/confirmation/duplicate/auto-login; opt-in/no initial network; PIN; initial choice; 2 clients; conflict; backups; offline+reload; changes during save; session expiry; logout; export excludes tokens');
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{for(const d of doms)d.window.close();});
